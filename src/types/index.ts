@@ -28,6 +28,7 @@ export interface FormSettings {
   endDate: string | null;
   responseLimit: number | null;
   confirmationMessage: string;
+  allowedSections: string[];
 }
 
 export interface Form {

@@ -38,21 +38,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Form is not accepting responses' }, { status: 400 });
     }
 
-    // Duplicate check using transaction
     const responseId = await adminDb.runTransaction(async (transaction) => {
-      // Check for existing response
+      // Check for existing response by this respondent
       const existingQuery = await adminDb
         .collection('responses')
         .where('formId', '==', formId)
+        .where('respondentIdentifier', '==', session.identifier)
+        .limit(1)
         .get();
 
-      const duplicate = existingQuery.docs.some(
-        (doc) => doc.data().respondentIdentifier === session.identifier
-      );
-
-      if (duplicate) {
-        throw new Error('DUPLICATE');
-      }
+      const existingDoc = existingQuery.docs[0] || null;
 
       // Validate required fields
       const fieldsSnapshot = await adminDb
@@ -68,23 +63,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         }
       }
 
-      const responseRef = adminDb.collection('responses').doc();
-      transaction.set(responseRef, {
-        formId: formId,
-        institutionId: form.institutionId,
-        respondentType: form.accessType === 'restricted' ? 'student' : 'public',
-        respondentIdentifier: session.identifier,
-        respondentEmail: session.email,
-        answers,
-        submittedAt: new Date().toISOString(),
-      });
+      if (existingDoc) {
+        // Update existing response
+        transaction.update(existingDoc.ref, {
+          answers,
+          submittedAt: new Date().toISOString(),
+        });
+        return existingDoc.id;
+      } else {
+        // Create new response
+        const responseRef = adminDb.collection('responses').doc();
+        transaction.set(responseRef, {
+          formId: formId,
+          institutionId: form.institutionId,
+          respondentType: form.accessType === 'restricted' ? 'student' : 'public',
+          respondentIdentifier: session.identifier,
+          respondentEmail: session.email,
+          answers,
+          submittedAt: new Date().toISOString(),
+        });
 
-      // Increment response count
-      transaction.update(adminDb.collection('forms').doc(formId), {
-        responseCount: FieldValue.increment(1),
-      });
+        // Only increment response count for new submissions
+        transaction.update(adminDb.collection('forms').doc(formId), {
+          responseCount: FieldValue.increment(1),
+        });
 
-      return responseRef.id;
+        return responseRef.id;
+      }
     });
 
     return NextResponse.json({
@@ -94,9 +99,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
-      if (error.message === 'DUPLICATE') {
-        return NextResponse.json({ error: 'You have already submitted this form' }, { status: 400 });
-      }
       if (error.message.startsWith('VALIDATION:')) {
         return NextResponse.json({ error: error.message.replace('VALIDATION:', '') }, { status: 400 });
       }

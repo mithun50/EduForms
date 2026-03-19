@@ -24,7 +24,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Search, ExternalLink, Pencil, BarChart3 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Plus, FileText, Search, ExternalLink, Pencil, BarChart3, Trash2, Copy, Link as LinkIcon, ToggleRight, ToggleLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeFetch } from '@/lib/utils/fetch';
 import type { Form, Institution } from '@/types';
@@ -44,6 +45,7 @@ export default function FormsPage() {
     institutionId: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Form | null>(null);
 
   useEffect(() => {
     fetchForms();
@@ -95,6 +97,50 @@ export default function FormsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDelete = async (form: Form) => {
+    try {
+      const res = await fetch(`/api/forms/${form.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      toast.success('Form deleted');
+      fetchForms();
+    } catch {
+      toast.error('Failed to delete form');
+    }
+  };
+
+  const handleToggleStatus = async (form: Form) => {
+    const newStatus = form.status === 'published' ? 'closed' : 'published';
+    try {
+      const res = await fetch(`/api/forms/${form.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update');
+      toast.success(newStatus === 'closed' ? 'Form closed' : 'Form reopened');
+      fetchForms();
+    } catch {
+      toast.error('Failed to update form status');
+    }
+  };
+
+  const handleDuplicate = async (form: Form) => {
+    try {
+      const res = await fetch(`/api/forms/${form.id}/duplicate`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to duplicate');
+      toast.success('Form duplicated');
+      fetchForms();
+    } catch {
+      toast.error('Failed to duplicate form');
+    }
+  };
+
+  const handleCopyLink = (form: Form) => {
+    const url = `${window.location.origin}/f/${form.slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copied!');
   };
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive"> = {
@@ -232,11 +278,11 @@ export default function FormsPage() {
                   </Badge>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
                   {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Link href={`/forms/${form.id}/edit`}>
                     <Button variant="outline" size="sm">
                       <Pencil className="mr-1 h-3 w-3" />
@@ -257,12 +303,56 @@ export default function FormsPage() {
                       </Button>
                     </Link>
                   )}
+                  {form.status === 'published' && (
+                    <Button variant="outline" size="sm" onClick={() => handleCopyLink(form)}>
+                      <LinkIcon className="mr-1 h-3 w-3" />
+                      Copy Link
+                    </Button>
+                  )}
+                  {(form.status === 'published' || form.status === 'closed') && (
+                    <Button variant="outline" size="sm" onClick={() => handleToggleStatus(form)}>
+                      {form.status === 'published' ? (
+                        <>
+                          <ToggleRight className="mr-1 h-3 w-3" />
+                          Close
+                        </>
+                      ) : (
+                        <>
+                          <ToggleLeft className="mr-1 h-3 w-3" />
+                          Reopen
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => handleDuplicate(form)}>
+                    <Copy className="mr-1 h-3 w-3" />
+                    Duplicate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeleteTarget(form)}
+                    className="text-red hover:text-red"
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" />
+                    Delete
+                  </Button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Form"
+        description={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
     </div>
   );
 }

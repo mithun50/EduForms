@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         endDate: settings?.endDate || null,
         responseLimit: settings?.responseLimit || null,
         confirmationMessage: settings?.confirmationMessage || 'Thank you for your response!',
+        allowedSections: settings?.allowedSections || [],
       },
       responseCount: 0,
       slug,

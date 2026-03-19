@@ -33,11 +33,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Form has ended' }, { status: 400 });
     }
 
-    // Check response limit
-    if (form.settings.responseLimit && form.responseCount >= form.settings.responseLimit) {
-      return NextResponse.json({ error: 'Form has reached response limit' }, { status: 400 });
-    }
-
     let email: string;
 
     if (form.accessType === 'restricted') {
@@ -60,25 +55,34 @@ export async function POST(request: NextRequest) {
 
       email = student.data().email;
 
-      // Check for duplicate submission
-      const existingResponse = await adminDb
-        .collection('responses')
-        .where('formId', '==', formId)
-        .get();
-
-      const alreadySubmitted = existingResponse.docs.some(
-        (doc) => doc.data().respondentIdentifier === identifier
-      );
-
-      if (alreadySubmitted) {
-        return NextResponse.json(
-          { error: 'You have already submitted this form' },
-          { status: 400 }
-        );
+      // Check section restriction
+      const allowedSections = form.settings?.allowedSections || [];
+      if (allowedSections.length > 0) {
+        const studentSection = student.data().section || '';
+        if (!allowedSections.includes(studentSection)) {
+          return NextResponse.json(
+            { error: `This form is restricted to section(s): ${allowedSections.join(', ')}` },
+            { status: 403 }
+          );
+        }
       }
     } else {
       // Public form - identifier is email
       email = identifier;
+    }
+
+    // Check response limit (allow existing respondents to edit)
+    if (form.settings.responseLimit && form.responseCount >= form.settings.responseLimit) {
+      const existingResponse = await adminDb
+        .collection('responses')
+        .where('formId', '==', formId)
+        .where('respondentIdentifier', '==', identifier)
+        .limit(1)
+        .get();
+
+      if (existingResponse.empty) {
+        return NextResponse.json({ error: 'Form has reached response limit' }, { status: 400 });
+      }
     }
 
     // Rate limit: max 3 OTPs per email per 15 minutes

@@ -32,7 +32,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return bDate.localeCompare(aDate);
       });
 
-    return NextResponse.json({ responses });
+    // For restricted forms, look up student details
+    let studentMap: Record<string, { name: string; department: string; year: string; section: string }> = {};
+    if (form.accessType === 'restricted' && responses.length > 0) {
+      const identifiers = [...new Set(responses.map((r) => (r as Record<string, string>).respondentIdentifier))];
+      // Fetch students in batches of 30 (Firestore 'in' limit)
+      for (let i = 0; i < identifiers.length; i += 30) {
+        const batch = identifiers.slice(i, i + 30);
+        const studentSnapshot = await adminDb
+          .collection('students')
+          .where('rollNumber', 'in', batch)
+          .where('institutionId', '==', form.institutionId)
+          .get();
+        studentSnapshot.docs.forEach((doc) => {
+          const s = doc.data();
+          studentMap[s.rollNumber] = {
+            name: s.name || '',
+            department: s.department || '',
+            year: s.year || '',
+            section: s.section || '',
+          };
+        });
+      }
+    }
+
+    return NextResponse.json({ responses, studentMap });
   } catch (error) {
     console.error('Get responses error:', error);
     return NextResponse.json({ error: 'Failed to fetch responses' }, { status: 500 });

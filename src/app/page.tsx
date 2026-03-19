@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
+import { Footer } from '@/components/ui/footer';
 import { FileText, BarChart3, Users } from 'lucide-react';
 
 export default function HomePage() {
@@ -93,15 +94,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t-[1.5px] border-line px-4 sm:px-8 py-6">
-        <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-4">
-          <Logo size="sm" />
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} ScholarForm. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

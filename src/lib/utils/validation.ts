@@ -30,6 +30,7 @@ export const formSchema = z.object({
     endDate: z.string().nullable().optional(),
     responseLimit: z.number().nullable().optional(),
     confirmationMessage: z.string().optional().default('Thank you for your response!'),
+    allowedSections: z.array(z.string()).optional().default([]),
   }).optional(),
 });
 

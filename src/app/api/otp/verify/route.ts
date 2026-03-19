@@ -51,11 +51,25 @@ export async function POST(request: NextRequest) {
 
     await sessionRef.update({ verified: true });
 
+    // Check for existing response to enable editing
+    const existingResponseQuery = await adminDb
+      .collection('responses')
+      .where('formId', '==', session.formId)
+      .where('respondentIdentifier', '==', session.identifier)
+      .limit(1)
+      .get();
+
+    let existingAnswers: Record<string, unknown> | null = null;
+    if (!existingResponseQuery.empty) {
+      existingAnswers = existingResponseQuery.docs[0].data().answers;
+    }
+
     return NextResponse.json({
       success: true,
       formId: session.formId,
       identifier: session.identifier,
       email: session.email,
+      existingAnswers,
     });
   } catch (error) {
     console.error('Verify OTP error:', error);

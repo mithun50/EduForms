@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import type { FormField } from '@/types';
+import { Footer } from '@/components/ui/footer';
 import { CheckCircle, Star } from 'lucide-react';
 
 type Step = 'loading' | 'error' | 'identify' | 'otp' | 'fill' | 'success';
@@ -54,6 +55,7 @@ export default function PublicFormPage() {
   const [answers, setAnswers] = useState<Record<string, { fieldType: string; value: string | string[] | number }>>({});
   const [submitting, setSubmitting] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchForm();
@@ -115,7 +117,13 @@ export default function PublicFormPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to verify OTP');
 
       setVerifiedEmail(data.email);
-      toast.success('Verified!');
+      if (data.existingAnswers) {
+        setAnswers(data.existingAnswers);
+        setIsEditing(true);
+        toast.success('Verified! Your previous response has been loaded for editing.');
+      } else {
+        toast.success('Verified!');
+      }
       setStep('fill');
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Failed to verify OTP');
@@ -358,18 +366,30 @@ export default function PublicFormPage() {
   // Success state
   if (step === 'success') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper px-4">
-        <div className="glass-card w-full max-w-md text-center p-8 space-y-4">
-          <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
-          <h2 className="font-display text-3xl tracking-tight">Submitted!</h2>
-          <p className="text-muted-foreground">{confirmationMessage}</p>
+      <div className="flex min-h-screen flex-col bg-paper">
+        <div className="flex flex-1 items-center justify-center px-4">
+          <div className="glass-card w-full max-w-md text-center p-8 space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
+            <h2 className="font-display text-3xl tracking-tight">
+              {isEditing ? 'Response Updated!' : 'Submitted!'}
+            </h2>
+            <p className="text-muted-foreground">{confirmationMessage}</p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              {isEditing ? 'Edit response again' : 'Submit another response'}
+            </Button>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-paper py-8 px-4">
+    <div className="flex min-h-screen flex-col bg-paper">
+      <div className="flex-1 py-8 px-4">
       <div className="mx-auto max-w-2xl space-y-6">
         {/* Form Header */}
         <div className="glass-card p-6">
@@ -450,6 +470,11 @@ export default function PublicFormPage() {
         {/* Form Fill Step */}
         {step === 'fill' && (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isEditing && (
+              <div className="glass-card border-red/30 bg-red/5 p-4 text-sm text-muted-foreground">
+                You have already submitted this form. You can edit your response below and re-submit while the form is open.
+              </div>
+            )}
             {fields.map((field) => (
               <div key={field.id} className="glass-card p-5 space-y-3">
                 <div>
@@ -466,11 +491,13 @@ export default function PublicFormPage() {
             ))}
 
             <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit'}
+              {submitting ? 'Submitting...' : isEditing ? 'Update Response' : 'Submit'}
             </Button>
           </form>
         )}
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }
