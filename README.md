@@ -78,9 +78,6 @@ FIREBASE_PRIVATE_KEY=
 BREVO_API_KEY=
 BREVO_SENDER_EMAIL=
 BREVO_FROM_NAME=EduForms
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### Install & Run
