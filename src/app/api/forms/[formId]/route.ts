@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const form = doc.data()!;
-    if (admin.role === 'institution_admin' && admin.institutionId !== form.institutionId) {
+    if (form.createdBy !== admin.uid) {
       return forbidden();
     }
 
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const form = doc.data()!;
-    if (admin.role === 'institution_admin' && admin.institutionId !== form.institutionId) {
+    if (form.createdBy !== admin.uid) {
       return forbidden();
     }
 
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const form = doc.data()!;
-    if (admin.role === 'institution_admin' && admin.institutionId !== form.institutionId) {
+    if (form.createdBy !== admin.uid) {
       return forbidden();
     }
 

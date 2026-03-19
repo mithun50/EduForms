@@ -9,13 +9,12 @@ export async function GET(request: NextRequest) {
   if (!admin) return unauthorized();
 
   try {
-    let query: FirebaseFirestore.Query = adminDb.collection('forms');
+    // Each admin only sees forms they personally created
+    const snapshot = await adminDb
+      .collection('forms')
+      .where('createdBy', '==', admin.uid)
+      .get();
 
-    if (admin.role === 'institution_admin' && admin.institutionId) {
-      query = query.where('institutionId', '==', admin.institutionId);
-    }
-
-    const snapshot = await query.get();
     const forms = snapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
       .sort((a, b) => {

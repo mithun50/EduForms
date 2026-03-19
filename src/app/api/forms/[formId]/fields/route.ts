@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const form = formDoc.data()!;
-    if (admin.role === 'institution_admin' && admin.institutionId !== form.institutionId) {
+    if (form.createdBy !== admin.uid) {
       return forbidden();
     }
 

@@ -14,7 +14,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const form = formDoc.data()!;
-    if (admin.role === 'institution_admin' && admin.institutionId !== form.institutionId) {
+    // Only the form creator can view its responses
+    if (form.createdBy !== admin.uid) {
       return forbidden();
     }
 
