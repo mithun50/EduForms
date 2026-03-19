@@ -13,6 +13,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
+    // institution_admin can only view admins from their own institution
+    if (admin.role === 'institution_admin') {
+      const targetAdmin = doc.data()!;
+      if (targetAdmin.institutionId !== admin.institutionId) {
+        return forbidden();
+      }
+    }
+
     return NextResponse.json({ admin: { uid: doc.id, ...doc.data() } });
   } catch (error) {
     console.error('Get admin error:', error);

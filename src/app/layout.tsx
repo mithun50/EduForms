@@ -1,13 +1,22 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Bebas_Neue, Instrument_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { Toaster } from '@/components/ui/sonner';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const bebasNeue = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-bebas-neue',
+});
+
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  variable: '--font-instrument-sans',
+});
 
 export const metadata: Metadata = {
-  title: 'EduForms',
+  title: 'ScholarForm',
   description: 'Form creation platform for schools and colleges',
 };
 
@@ -18,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${bebasNeue.variable} ${instrumentSans.variable} antialiased`}>
         <AuthProvider>
           {children}
           <Toaster />

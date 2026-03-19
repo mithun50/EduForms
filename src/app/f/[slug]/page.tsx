@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -132,7 +131,6 @@ export default function PublicFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
     for (const field of fields) {
       if (field.required) {
         const answer = answers[field.id];
@@ -234,7 +232,7 @@ export default function PublicFormPage() {
             {field.options.map((opt) => (
               <div key={opt} className="flex items-center space-x-2">
                 <RadioGroupItem value={opt} id={`${field.id}-${opt}`} />
-                <Label htmlFor={`${field.id}-${opt}`}>{opt}</Label>
+                <Label htmlFor={`${field.id}-${opt}`} className="text-sm normal-case tracking-normal font-normal">{opt}</Label>
               </div>
             ))}
           </RadioGroup>
@@ -258,7 +256,7 @@ export default function PublicFormPage() {
                       updateAnswer(field.id, field.type, updated);
                     }}
                   />
-                  <Label htmlFor={`${field.id}-${opt}`}>{opt}</Label>
+                  <Label htmlFor={`${field.id}-${opt}`} className="text-sm normal-case tracking-normal font-normal">{opt}</Label>
                 </div>
               );
             })}
@@ -280,7 +278,7 @@ export default function PublicFormPage() {
                 <Star
                   className={`h-8 w-8 ${
                     i < currentRating
-                      ? 'fill-yellow-400 text-yellow-400'
+                      ? 'fill-red text-red'
                       : 'text-muted-foreground'
                   }`}
                 />
@@ -307,10 +305,10 @@ export default function PublicFormPage() {
                     key={val}
                     type="button"
                     onClick={() => updateAnswer(field.id, field.type, val)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                    className={`flex h-10 w-10 items-center justify-center rounded border-[1.5px] text-sm font-medium transition-colors ${
                       currentScale === val
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-accent'
+                        ? 'bg-ink text-paper border-ink'
+                        : 'border-line hover:bg-paper2'
                     }`}
                   >
                     {val}
@@ -340,8 +338,8 @@ export default function PublicFormPage() {
   // Loading state
   if (step === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-paper">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
       </div>
     );
   }
@@ -349,12 +347,10 @@ export default function PublicFormPage() {
   // Error state
   if (step === 'error') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="py-12">
-            <p className="text-lg font-medium text-destructive">{errorMessage}</p>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+        <div className="glass-card w-full max-w-md text-center p-8">
+          <p className="font-display text-2xl text-red">{errorMessage}</p>
+        </div>
       </div>
     );
   }
@@ -362,125 +358,111 @@ export default function PublicFormPage() {
   // Success state
   if (step === 'success') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="py-12 space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h2 className="text-2xl font-bold">Submitted!</h2>
-            <p className="text-muted-foreground">{confirmationMessage}</p>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+        <div className="glass-card w-full max-w-md text-center p-8 space-y-4">
+          <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
+          <h2 className="font-display text-3xl tracking-tight">Submitted!</h2>
+          <p className="text-muted-foreground">{confirmationMessage}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
+    <div className="min-h-screen bg-paper py-8 px-4">
       <div className="mx-auto max-w-2xl space-y-6">
         {/* Form Header */}
-        <Card>
-          <CardHeader>
-            {institutionName && (
-              <p className="text-sm text-muted-foreground">{institutionName}</p>
-            )}
-            <CardTitle className="text-2xl">{form?.title}</CardTitle>
-            {form?.description && <CardDescription>{form.description}</CardDescription>}
-          </CardHeader>
-        </Card>
+        <div className="glass-card p-6">
+          {institutionName && (
+            <p className="label-ink mb-2">{institutionName}</p>
+          )}
+          <h1 className="font-display text-3xl tracking-tight">{form?.title}</h1>
+          {form?.description && <p className="text-muted-foreground mt-2">{form.description}</p>}
+        </div>
 
         {/* OTP Identify Step */}
         {step === 'identify' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Verify Your Identity</CardTitle>
-              <CardDescription>
-                {form?.accessType === 'restricted'
-                  ? 'Enter your roll number to receive an OTP'
-                  : 'Enter your email to receive an OTP'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>
-                    {form?.accessType === 'restricted' ? 'Roll Number' : 'Email'}
-                  </Label>
-                  <Input
-                    type={form?.accessType === 'public' ? 'email' : 'text'}
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={
-                      form?.accessType === 'restricted'
-                        ? 'Enter your roll number'
-                        : 'Enter your email'
-                    }
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={sendingOtp}>
-                  {sendingOtp ? 'Sending OTP...' : 'Send OTP'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6">
+            <h2 className="font-display text-xl tracking-tight">Verify Your Identity</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {form?.accessType === 'restricted'
+                ? 'Enter your roll number to receive an OTP'
+                : 'Enter your email to receive an OTP'}
+            </p>
+            <form onSubmit={handleSendOtp} className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label>
+                  {form?.accessType === 'restricted' ? 'Roll Number' : 'Email'}
+                </Label>
+                <Input
+                  type={form?.accessType === 'public' ? 'email' : 'text'}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={
+                    form?.accessType === 'restricted'
+                      ? 'Enter your roll number'
+                      : 'Enter your email'
+                  }
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={sendingOtp}>
+                {sendingOtp ? 'Sending OTP...' : 'Send OTP'}
+              </Button>
+            </form>
+          </div>
         )}
 
         {/* OTP Verify Step */}
         {step === 'otp' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Enter OTP</CardTitle>
-              <CardDescription>
-                We sent a 6-digit code to {maskedEmail}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>OTP Code</Label>
-                  <Input
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="Enter 6-digit OTP"
-                    maxLength={6}
-                    className="text-center text-2xl tracking-widest"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={verifyingOtp}>
-                  {verifyingOtp ? 'Verifying...' : 'Verify'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setStep('identify')}
-                >
-                  Back
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-6">
+            <h2 className="font-display text-xl tracking-tight">Enter OTP</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              We sent a 6-digit code to {maskedEmail}
+            </p>
+            <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label>OTP Code</Label>
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter 6-digit OTP"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={verifyingOtp}>
+                {verifyingOtp ? 'Verifying...' : 'Verify'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setStep('identify')}
+              >
+                Back
+              </Button>
+            </form>
+          </div>
         )}
 
         {/* Form Fill Step */}
         {step === 'fill' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {fields.map((field) => (
-              <Card key={field.id}>
-                <CardContent className="pt-6 space-y-3">
-                  <div>
-                    <Label className="text-base">
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                    {field.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
-                    )}
-                  </div>
-                  {renderField(field)}
-                </CardContent>
-              </Card>
+              <div key={field.id} className="glass-card p-5 space-y-3">
+                <div>
+                  <label className="text-sm font-medium">
+                    {field.label}
+                    {field.required && <span className="text-red ml-1">*</span>}
+                  </label>
+                  {field.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
+                  )}
+                </div>
+                {renderField(field)}
+              </div>
             ))}
 
             <Button type="submit" className="w-full" size="lg" disabled={submitting}>

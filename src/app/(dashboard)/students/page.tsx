@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/page-header';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,10 @@ export default function StudentsPage() {
     section: '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   // Super admin institution selector
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -181,7 +186,6 @@ export default function StudentsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this student?')) return;
     try {
       await fetch(`/api/students/${id}`, { method: 'DELETE' });
       toast.success('Student deleted');
@@ -199,7 +203,6 @@ export default function StudentsPage() {
       s.department?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Super admin without institution selected
   const needsInstitution = admin?.role === 'super_admin' && !selectedInstitutionId;
   const selectedInstitution = institutions.find((i) => i.id === selectedInstitutionId);
 
@@ -207,7 +210,7 @@ export default function StudentsPage() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-16 animate-pulse rounded bg-paper2" />
         ))}
       </div>
     );
@@ -215,141 +218,133 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Students</h2>
-          <p className="text-muted-foreground">{needsInstitution ? 'Select an institution' : `${students.length} student(s)`}</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={needsInstitution}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload CSV
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Upload Student Data</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Upload a CSV with columns: rollNumber, name, email, department, year, section
-                </p>
-                <Input
-                  type="file"
-                  accept=".csv"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-                {csvPreview.length > 0 && (
-                  <>
-                    <div className="max-h-64 overflow-auto rounded border">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/50 sticky top-0">
-                          <tr>
-                            {Object.keys(csvPreview[0]).map((key) => (
-                              <th key={key} className="px-3 py-2 text-left font-medium">
-                                {key}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {csvPreview.slice(0, 10).map((row, i) => (
-                            <tr key={i} className="border-t">
-                              {Object.values(row).map((val, j) => (
-                                <td key={j} className="px-3 py-2">
-                                  {val}
-                                </td>
+      <PageHeader
+        title="Students"
+        description={needsInstitution ? 'Select an institution' : `${students.length} student(s)`}
+        actions={
+          <div className="flex gap-2">
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger render={<Button variant="outline" disabled={needsInstitution} />}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload CSV
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Upload Student Data</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Upload a CSV with columns: rollNumber, name, email, department, year, section
+                  </p>
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                  />
+                  {csvPreview.length > 0 && (
+                    <>
+                      <div className="max-h-64 overflow-auto glass-card">
+                        <table className="table-ink">
+                          <thead>
+                            <tr>
+                              {Object.keys(csvPreview[0]).map((key) => (
+                                <th key={key}>{key}</th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Showing {Math.min(10, csvPreview.length)} of {csvPreview.length} rows
-                    </p>
-                    <Button onClick={handleBulkUpload} disabled={uploading} className="w-full">
-                      {uploading ? 'Uploading...' : `Import ${csvPreview.length} Students`}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+                          </thead>
+                          <tbody>
+                            {csvPreview.slice(0, 10).map((row, i) => (
+                              <tr key={i}>
+                                {Object.values(row).map((val, j) => (
+                                  <td key={j}>{val}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="label-ink">
+                        Showing {Math.min(10, csvPreview.length)} of {csvPreview.length} rows
+                      </p>
+                      <Button onClick={handleBulkUpload} disabled={uploading} className="w-full">
+                        {uploading ? 'Uploading...' : `Import ${csvPreview.length} Students`}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={needsInstitution}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Student</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddStudent} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger render={<Button disabled={needsInstitution} />}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Student
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Student</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddStudent} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Roll Number</Label>
+                      <Input
+                        value={formData.rollNumber}
+                        onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label>Roll Number</Label>
+                    <Label>Email</Label>
                     <Input
-                      value={formData.rollNumber}
-                      onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Input
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Year</Label>
+                      <Input
+                        value={formData.year}
+                        onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Section</Label>
+                      <Input
+                        value={formData.section}
+                        onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Department</Label>
-                    <Input
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Year</Label>
-                    <Input
-                      value={formData.year}
-                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Section</Label>
-                    <Input
-                      value={formData.section}
-                      onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? 'Adding...' : 'Add Student'}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+                  <Button type="submit" className="w-full" disabled={submitting}>
+                    {submitting ? 'Adding...' : 'Add Student'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+      />
 
       {/* Institution selector for super_admin */}
       {admin?.role === 'super_admin' && (
@@ -374,12 +369,10 @@ export default function StudentsPage() {
       )}
 
       {needsInstitution ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">Select an institution to view students</p>
-          </CardContent>
-        </Card>
+        <div className="glass-card flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">Select an institution to view students</p>
+        </div>
       ) : (
         <>
           <div className="relative">
@@ -393,71 +386,73 @@ export default function StudentsPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <GraduationCap className="h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-4 text-muted-foreground">No students found</p>
-              </CardContent>
-            </Card>
+            <div className="glass-card flex flex-col items-center justify-center py-12">
+              <GraduationCap className="h-12 w-12 text-muted-foreground/50" />
+              <p className="mt-4 text-muted-foreground">No students found</p>
+            </div>
           ) : (
             <>
               {/* Mobile card layout */}
               <div className="space-y-3 md:hidden">
                 {filtered.map((s) => (
-                  <Card key={s.id}>
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{s.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{s.rollNumber}</p>
-                        <p className="text-sm text-muted-foreground truncate">{s.email}</p>
-                        {s.department && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {s.department}{s.year ? ` - ${s.year}` : ''}{s.section ? ` ${s.section}` : ''}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(s.id)}
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div key={s.id} className="glass-card flex items-center justify-between p-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{s.name}</p>
+                      <p className="label-ink mt-1">{s.rollNumber}</p>
+                      <p className="text-sm text-muted-foreground truncate">{s.email}</p>
+                      {s.department && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {s.department}{s.year ? ` - ${s.year}` : ''}{s.section ? ` ${s.section}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setDeleteTargetId(s.id);
+                        setConfirmOpen(true);
+                      }}
+                      className="text-muted-foreground hover:text-red shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
               </div>
 
               {/* Desktop table layout */}
-              <div className="hidden md:block overflow-x-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead className="border-b bg-muted/50">
+              <div className="hidden md:block glass-card overflow-x-auto">
+                <table className="table-ink">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">Roll No.</th>
-                      <th className="px-4 py-3 text-left font-medium">Name</th>
-                      <th className="px-4 py-3 text-left font-medium">Email</th>
-                      <th className="px-4 py-3 text-left font-medium">Department</th>
-                      <th className="px-4 py-3 text-left font-medium">Year</th>
-                      <th className="px-4 py-3 text-left font-medium">Section</th>
-                      <th className="px-4 py-3 text-left font-medium"></th>
+                      <th>Roll No.</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Department</th>
+                      <th>Year</th>
+                      <th>Section</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((s) => (
-                      <tr key={s.id} className="border-b">
-                        <td className="px-4 py-3 font-medium">{s.rollNumber}</td>
-                        <td className="px-4 py-3">{s.name}</td>
-                        <td className="px-4 py-3">{s.email}</td>
-                        <td className="px-4 py-3">{s.department}</td>
-                        <td className="px-4 py-3">{s.year}</td>
-                        <td className="px-4 py-3">{s.section}</td>
-                        <td className="px-4 py-3">
+                      <tr key={s.id}>
+                        <td className="font-medium">{s.rollNumber}</td>
+                        <td>{s.name}</td>
+                        <td>{s.email}</td>
+                        <td>{s.department}</td>
+                        <td>{s.year}</td>
+                        <td>{s.section}</td>
+                        <td>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(s.id)}
-                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setDeleteTargetId(s.id);
+                              setConfirmOpen(true);
+                            }}
+                            className="text-muted-foreground hover:text-red"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -471,6 +466,19 @@ export default function StudentsPage() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete Student"
+        description="Are you sure you want to delete this student? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteTargetId) handleDelete(deleteTargetId);
+          setDeleteTargetId(null);
+        }}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Dialog,
   DialogContent,
@@ -97,7 +97,7 @@ export default function FormsPage() {
     }
   };
 
-  const statusColors: Record<string, string> = {
+  const statusVariants: Record<string, "default" | "secondary" | "destructive"> = {
     draft: 'secondary',
     published: 'default',
     closed: 'destructive',
@@ -111,7 +111,7 @@ export default function FormsPage() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-24 animate-pulse rounded bg-paper2" />
         ))}
       </div>
     );
@@ -119,85 +119,83 @@ export default function FormsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Forms</h2>
-          <p className="text-muted-foreground">Create and manage forms</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Form
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Form</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Title</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Student Feedback Form"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Optional description..."
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Access Type</Label>
-                <Select
-                  value={formData.accessType}
-                  onValueChange={(val: 'restricted' | 'public') =>
-                    setFormData({ ...formData, accessType: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="restricted">Restricted (College students only)</SelectItem>
-                    <SelectItem value="public">Public (Anyone with email)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {admin?.role === 'super_admin' && (
+      <PageHeader
+        title="Forms"
+        description="Create and manage forms"
+        actions={
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger render={<Button />}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Form
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Form</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Institution</Label>
+                  <Label>Title</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. Student Feedback Form"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Optional description..."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Access Type</Label>
                   <Select
-                    value={formData.institutionId}
-                    onValueChange={(val) => setFormData({ ...formData, institutionId: val })}
+                    value={formData.accessType}
+                    onValueChange={(val: 'restricted' | 'public') =>
+                      setFormData({ ...formData, accessType: val })
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select institution" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {institutions.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="restricted">Restricted (College students only)</SelectItem>
+                      <SelectItem value="public">Public (Anyone with email)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create & Build'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                {admin?.role === 'super_admin' && (
+                  <div className="space-y-2">
+                    <Label>Institution</Label>
+                    <Select
+                      value={formData.institutionId}
+                      onValueChange={(val) => setFormData({ ...formData, institutionId: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select institution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {institutions.map((inst) => (
+                          <SelectItem key={inst.id} value={inst.id}>
+                            {inst.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Creating...' : 'Create & Build'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -210,62 +208,58 @@ export default function FormsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">No forms yet</p>
-          </CardContent>
-        </Card>
+        <div className="glass-card flex flex-col items-center justify-center py-12">
+          <FileText className="h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">No forms yet</p>
+        </div>
       ) : (
         <div className="grid gap-4">
           {filtered.map((form) => (
-            <Card key={form.id}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">{form.title}</CardTitle>
+            <div key={form.id} className="glass-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <h3 className="font-display text-lg tracking-tight">{form.title}</h3>
                   {form.description && (
                     <p className="text-sm text-muted-foreground line-clamp-1">{form.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={statusColors[form.status] as "default" | "secondary" | "destructive"}>
+                  <Badge variant={statusVariants[form.status]}>
                     {form.status}
                   </Badge>
                   <Badge variant="outline">
                     {form.accessType === 'restricted' ? 'Restricted' : 'Public'}
                   </Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
-                  </p>
-                  <div className="flex gap-2">
-                    <Link href={`/forms/${form.id}/edit`}>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-2">
+                  <Link href={`/forms/${form.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="mr-1 h-3 w-3" />
+                      Edit
+                    </Button>
+                  </Link>
+                  <Link href={`/forms/${form.id}/responses`}>
+                    <Button variant="outline" size="sm">
+                      <BarChart3 className="mr-1 h-3 w-3" />
+                      Responses
+                    </Button>
+                  </Link>
+                  {form.status === 'published' && (
+                    <Link href={`/f/${form.slug}`} target="_blank">
                       <Button variant="outline" size="sm">
-                        <Pencil className="mr-1 h-3 w-3" />
-                        Edit
+                        <ExternalLink className="mr-1 h-3 w-3" />
+                        Open
                       </Button>
                     </Link>
-                    <Link href={`/forms/${form.id}/responses`}>
-                      <Button variant="outline" size="sm">
-                        <BarChart3 className="mr-1 h-3 w-3" />
-                        Responses
-                      </Button>
-                    </Link>
-                    {form.status === 'published' && (
-                      <Link href={`/f/${form.slug}`} target="_blank">
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="mr-1 h-3 w-3" />
-                          Open
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import { FileText, Users, GraduationCap, Building2 } from 'lucide-react';
 import { safeFetch } from '@/lib/utils/fetch';
 
@@ -21,7 +21,6 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // super_admin: no institutionId filter needed (API returns all)
         const studentParams = admin?.role === 'institution_admin' && admin?.institutionId
           ? `?institutionId=${admin.institutionId}`
           : '';
@@ -59,42 +58,38 @@ export default function DashboardPage() {
   }, [admin]);
 
   const cards = [
-    { title: 'Total Forms', value: stats.forms, icon: FileText, color: 'text-blue-600' },
-    { title: 'Total Responses', value: stats.responses, icon: Users, color: 'text-green-600' },
-    { title: 'Students', value: stats.students, icon: GraduationCap, color: 'text-purple-600' },
+    { title: 'Total Forms', value: stats.forms, icon: FileText },
+    { title: 'Total Responses', value: stats.responses, icon: Users },
+    { title: 'Students', value: stats.students, icon: GraduationCap },
     ...(admin?.role === 'super_admin'
-      ? [{ title: 'Institutions', value: stats.institutions, icon: Building2, color: 'text-orange-600' }]
+      ? [{ title: 'Institutions', value: stats.institutions, icon: Building2 }]
       : []),
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
-          Welcome back, {admin?.displayName}
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome back, ${admin?.displayName}`}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <Card key={card.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {card.title}
-                </CardTitle>
-                <Icon className={`h-5 w-5 ${card.color}`} />
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="h-8 w-16 animate-pulse rounded bg-muted" />
-                ) : (
-                  <p className="text-3xl font-bold">{card.value}</p>
-                )}
-              </CardContent>
-            </Card>
+            <div key={card.title} className="glass-card p-5">
+              <div className="flex items-center justify-between">
+                <span className="label-ink">{card.title}</span>
+                <div className="flex h-9 w-9 items-center justify-center rounded bg-red/10">
+                  <Icon className="h-4 w-4 text-red" />
+                </div>
+              </div>
+              {loading ? (
+                <div className="mt-3 h-9 w-20 animate-pulse rounded bg-paper2" />
+              ) : (
+                <p className="mt-3 font-display text-4xl tracking-tight">{card.value}</p>
+              )}
+            </div>
           );
         })}
       </div>

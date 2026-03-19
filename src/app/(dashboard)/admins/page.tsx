@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Dialog,
   DialogContent,
@@ -103,7 +103,7 @@ export default function AdminsPage() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-24 animate-pulse rounded bg-paper2" />
         ))}
       </div>
     );
@@ -111,94 +111,92 @@ export default function AdminsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Admins</h2>
-          <p className="text-muted-foreground">Manage admin accounts</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Admin
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Admin</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={formData.displayName}
-                  onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  minLength={6}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(val: 'super_admin' | 'institution_admin') =>
-                    setFormData({ ...formData, role: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="super_admin">Super Admin</SelectItem>
-                    <SelectItem value="institution_admin">Institution Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {formData.role === 'institution_admin' && (
+      <PageHeader
+        title="Admins"
+        description="Manage admin accounts"
+        actions={
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger render={<Button />}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Admin
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Admin</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Institution</Label>
+                  <Label>Name</Label>
+                  <Input
+                    value={formData.displayName}
+                    onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
                   <Select
-                    value={formData.institutionId}
-                    onValueChange={(val) => setFormData({ ...formData, institutionId: val })}
+                    value={formData.role}
+                    onValueChange={(val: 'super_admin' | 'institution_admin') =>
+                      setFormData({ ...formData, role: val })
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select institution" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {institutions.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name} ({inst.code})
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      <SelectItem value="institution_admin">Institution Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Admin'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                {formData.role === 'institution_admin' && (
+                  <div className="space-y-2">
+                    <Label>Institution</Label>
+                    <Select
+                      value={formData.institutionId}
+                      onValueChange={(val) => setFormData({ ...formData, institutionId: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select institution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {institutions.map((inst) => (
+                          <SelectItem key={inst.id} value={inst.id}>
+                            {inst.name} ({inst.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Creating...' : 'Create Admin'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -211,19 +209,17 @@ export default function AdminsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">No admins found</p>
-          </CardContent>
-        </Card>
+        <div className="glass-card flex flex-col items-center justify-center py-12">
+          <Users className="h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">No admins found</p>
+        </div>
       ) : (
         <div className="grid gap-4">
           {filtered.map((a) => (
-            <Card key={a.uid}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div key={a.uid} className="glass-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <CardTitle className="text-lg">{a.displayName}</CardTitle>
+                  <h3 className="font-display text-lg tracking-tight">{a.displayName}</h3>
                   <p className="text-sm text-muted-foreground">{a.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -234,8 +230,8 @@ export default function AdminsPage() {
                     {a.role === 'super_admin' ? 'Super Admin' : 'Institution Admin'}
                   </Badge>
                 </div>
-              </CardHeader>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Download, Search, BarChart3, Table as TableIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,7 +24,7 @@ import {
   Line,
 } from 'recharts';
 
-const CHART_COLORS = ['#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', '#4895ef'];
+const CHART_COLORS = ['#E8341A', '#0D0D0D', '#7A7670', '#B8B4AE', '#E8E4DD', '#C4281A'];
 
 export default function ResponsesPage() {
   const params = useParams();
@@ -139,7 +137,7 @@ export default function ResponsesPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
       </div>
     );
   }
@@ -152,8 +150,8 @@ export default function ResponsesPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-xl font-bold">{form?.title} - Responses</h2>
-            <p className="text-sm text-muted-foreground">{responses.length} response(s)</p>
+            <h2 className="font-display text-2xl tracking-tight">{form?.title} — Responses</h2>
+            <p className="label-ink mt-1">{responses.length} response(s)</p>
           </div>
         </div>
         <Button variant="outline" onClick={exportCsv} disabled={responses.length === 0}>
@@ -174,7 +172,7 @@ export default function ResponsesPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="table" className="space-y-4">
+        <TabsContent value="table" className="space-y-4 mt-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -186,69 +184,63 @@ export default function ResponsesPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No responses yet
-              </CardContent>
-            </Card>
+            <div className="glass-card py-12 text-center text-muted-foreground">
+              No responses yet
+            </div>
           ) : (
             <>
               {/* Mobile card layout */}
               <div className="space-y-3 md:hidden">
                 {filtered.map((r, i) => (
-                  <Card key={r.id}>
-                    <CardContent className="py-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">#{i + 1} {r.respondentIdentifier}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(r.submittedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{r.respondentEmail}</p>
-                      {fields.slice(0, 3).map((f) => {
-                        const answer = r.answers?.[f.id];
-                        const val = answer
-                          ? Array.isArray(answer.value)
-                            ? answer.value.join(', ')
-                            : String(answer.value)
-                          : '-';
-                        return (
-                          <div key={f.id} className="text-sm">
-                            <span className="text-muted-foreground">{f.label}: </span>
-                            <span className="truncate">{val}</span>
-                          </div>
-                        );
-                      })}
-                      {fields.length > 3 && (
-                        <p className="text-xs text-muted-foreground">+{fields.length - 3} more fields</p>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div key={r.id} className="glass-card p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">#{i + 1} {r.respondentIdentifier}</p>
+                      <p className="label-ink">
+                        {new Date(r.submittedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{r.respondentEmail}</p>
+                    {fields.slice(0, 3).map((f) => {
+                      const answer = r.answers?.[f.id];
+                      const val = answer
+                        ? Array.isArray(answer.value)
+                          ? answer.value.join(', ')
+                          : String(answer.value)
+                        : '-';
+                      return (
+                        <div key={f.id} className="text-sm">
+                          <span className="text-muted-foreground">{f.label}: </span>
+                          <span className="truncate">{val}</span>
+                        </div>
+                      );
+                    })}
+                    {fields.length > 3 && (
+                      <p className="label-ink">+{fields.length - 3} more fields</p>
+                    )}
+                  </div>
                 ))}
               </div>
 
               {/* Desktop table layout */}
-              <div className="hidden md:block overflow-x-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead className="border-b bg-muted/50">
+              <div className="hidden md:block overflow-x-auto glass-card">
+                <table className="table-ink">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">#</th>
-                      <th className="px-4 py-3 text-left font-medium">Respondent</th>
-                      <th className="px-4 py-3 text-left font-medium">Email</th>
+                      <th>#</th>
+                      <th>Respondent</th>
+                      <th>Email</th>
                       {fields.map((f) => (
-                        <th key={f.id} className="px-4 py-3 text-left font-medium whitespace-nowrap">
-                          {f.label}
-                        </th>
+                        <th key={f.id}>{f.label}</th>
                       ))}
-                      <th className="px-4 py-3 text-left font-medium">Submitted</th>
+                      <th>Submitted</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((r, i) => (
-                      <tr key={r.id} className="border-b">
-                        <td className="px-4 py-3">{i + 1}</td>
-                        <td className="px-4 py-3">{r.respondentIdentifier}</td>
-                        <td className="px-4 py-3">{r.respondentEmail}</td>
+                      <tr key={r.id}>
+                        <td>{i + 1}</td>
+                        <td>{r.respondentIdentifier}</td>
+                        <td>{r.respondentEmail}</td>
                         {fields.map((f) => {
                           const answer = r.answers?.[f.id];
                           const val = answer
@@ -257,12 +249,12 @@ export default function ResponsesPage() {
                               : String(answer.value)
                             : '-';
                           return (
-                            <td key={f.id} className="px-4 py-3 max-w-[200px] truncate">
+                            <td key={f.id} className="max-w-[200px] truncate">
                               {val}
                             </td>
                           );
                         })}
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="whitespace-nowrap">
                           {new Date(r.submittedAt).toLocaleString()}
                         </td>
                       </tr>
@@ -274,27 +266,23 @@ export default function ResponsesPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-6 mt-4">
           {/* Timeline */}
           {responses.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Response Timeline</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-48 sm:h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timelineData()}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" fontSize={12} />
-                      <YAxis fontSize={12} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="count" stroke="#4361ee" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="glass-card p-4">
+              <p className="label-ink mb-3">Response Timeline</p>
+              <div className="h-48 sm:h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timelineData()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,13,13,0.08)" />
+                    <XAxis dataKey="date" fontSize={12} />
+                    <YAxis fontSize={12} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="#E8341A" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
 
           {/* Per-field analytics */}
@@ -303,53 +291,49 @@ export default function ResponsesPage() {
             if (!data || data.length === 0) return null;
 
             return (
-              <Card key={field.id}>
-                <CardHeader>
-                  <CardTitle className="text-sm">{field.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="h-48 sm:h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" fontSize={12} />
-                          <YAxis fontSize={12} />
-                          <Tooltip />
-                          <Bar dataKey="value" fill="#4361ee" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="h-48 sm:h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={data}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={80}
-                            paddingAngle={3}
-                            dataKey="value"
-                            nameKey="name"
-                            label={({ name, percent }) =>
-                              `${name} (${(percent * 100).toFixed(0)}%)`
-                            }
-                          >
-                            {data.map((_, index) => (
-                              <Cell
-                                key={index}
-                                fill={CHART_COLORS[index % CHART_COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+              <div key={field.id} className="glass-card p-4">
+                <p className="label-ink mb-3">{field.label}</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="h-48 sm:h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,13,13,0.08)" />
+                        <XAxis dataKey="name" fontSize={12} />
+                        <YAxis fontSize={12} />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#E8341A" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="h-48 sm:h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={data}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={80}
+                          paddingAngle={3}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) =>
+                            `${name} (${(percent * 100).toFixed(0)}%)`
+                          }
+                        >
+                          {data.map((_, index) => (
+                            <Cell
+                              key={index}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </TabsContent>

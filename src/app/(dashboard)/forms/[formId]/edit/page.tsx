@@ -163,7 +163,6 @@ export default function FormBuilderPage() {
     }
     if (!validateFieldLabels()) return;
 
-    // Save fields first
     await saveFields();
 
     setPublishing(true);
@@ -188,7 +187,7 @@ export default function FormBuilderPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
       </div>
     );
   }
@@ -202,7 +201,7 @@ export default function FormBuilderPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-xl font-bold">{form?.title || 'Form Builder'}</h2>
+            <h2 className="font-display text-2xl tracking-tight">{form?.title || 'Form Builder'}</h2>
             <p className="text-sm text-muted-foreground">{form?.description}</p>
           </div>
           {form?.status && (
@@ -229,44 +228,42 @@ export default function FormBuilderPage() {
         {/* Canvas */}
         <div className="space-y-3">
           {fields.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <p className="text-muted-foreground">Add fields from the palette below</p>
-              </CardContent>
-            </Card>
+            <div className="glass-card flex flex-col items-center justify-center py-16">
+              <p className="text-muted-foreground">Add fields from the palette below</p>
+            </div>
           ) : (
             fields.map((field, index) => (
-              <Card
+              <div
                 key={field.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedField === field.id ? 'ring-2 ring-primary' : ''
+                className={`glass-card cursor-pointer p-4 transition-colors ${
+                  selectedField === field.id ? 'border-red border-[2px]' : ''
                 }`}
                 onClick={() => setSelectedField(field.id)}
               >
-                <CardContent className="flex items-start gap-3 py-4">
+                <div className="flex items-start gap-3">
                   <div className="flex flex-col gap-0.5 pt-1">
                     <button
                       onClick={(e) => { e.stopPropagation(); moveField(index, 'up'); }}
                       disabled={index === 0}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      className="text-muted-foreground hover:text-ink disabled:opacity-30"
                     >
                       <ChevronUp className="h-4 w-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); moveField(index, 'down'); }}
                       disabled={index === fields.length - 1}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      className="text-muted-foreground hover:text-ink disabled:opacity-30"
                     >
                       <ChevronDownIcon className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground uppercase font-medium">
+                      <span className="label-ink">
                         {FIELD_TYPES.find((t) => t.type === field.type)?.label}
                       </span>
                       {field.required && (
-                        <span className="text-xs text-destructive">*Required</span>
+                        <span className="text-[10px] uppercase tracking-[0.08em] font-extrabold text-red">*Required</span>
                       )}
                     </div>
                     <p className="font-medium mt-1">
@@ -280,48 +277,42 @@ export default function FormBuilderPage() {
                     variant="ghost"
                     size="icon"
                     onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-red"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
 
           {/* Field Palette */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Add Field</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {FIELD_TYPES.map((ft) => {
-                  const Icon = ft.icon;
-                  return (
-                    <button
-                      key={ft.type}
-                      onClick={() => addField(ft.type)}
-                      className="flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-colors hover:bg-accent"
-                    >
-                      <Icon className="h-4 w-4" />
-                      {ft.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="glass-card p-4">
+            <p className="label-ink mb-3">Add Field</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {FIELD_TYPES.map((ft) => {
+                const Icon = ft.icon;
+                return (
+                  <button
+                    key={ft.type}
+                    onClick={() => addField(ft.type)}
+                    className="flex flex-col items-center gap-1 rounded border-[1.5px] border-line p-3 text-xs transition-colors hover:bg-paper2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {ft.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Properties Panel */}
         <div className="space-y-4">
           {selected ? (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Field Properties</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="glass-card p-4">
+              <p className="label-ink mb-3">Field Properties</p>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Label</Label>
                   <Input
@@ -470,14 +461,12 @@ export default function FormBuilderPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Select a field to edit its properties
-              </CardContent>
-            </Card>
+            <div className="glass-card py-8 text-center text-sm text-muted-foreground">
+              Select a field to edit its properties
+            </div>
           )}
         </div>
       </div>

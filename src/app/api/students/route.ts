@@ -36,13 +36,23 @@ export async function GET(request: NextRequest) {
     }
 
     const snapshot = await query.get();
-    const students = snapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .sort((a, b) => {
-        const aDate = (a as Record<string, string>).createdAt || '';
-        const bDate = (b as Record<string, string>).createdAt || '';
-        return bDate.localeCompare(aDate);
+    let students = snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    // institution_admin only sees students they personally added
+    if (admin.role === 'institution_admin') {
+      students = students.filter((s) => {
+        const data = s as Record<string, unknown>;
+        // Include students added by this admin, or legacy students with no addedBy field
+        return data.addedBy === admin.uid || !data.addedBy;
       });
+    }
+
+    students.sort((a, b) => {
+      const aDate = (a as Record<string, string>).createdAt || '';
+      const bDate = (b as Record<string, string>).createdAt || '';
+      return bDate.localeCompare(aDate);
+    });
 
     return NextResponse.json({ students });
   } catch (error) {
@@ -81,6 +91,7 @@ export async function POST(request: NextRequest) {
         batch.set(ref, {
           ...parsed.data,
           institutionId,
+          addedBy: admin.uid,
           batchId,
           createdAt: new Date().toISOString(),
         });
@@ -114,6 +125,7 @@ export async function POST(request: NextRequest) {
     const docRef = await adminDb.collection('students').add({
       ...parsed.data,
       institutionId,
+      addedBy: admin.uid,
       batchId: '',
       createdAt: new Date().toISOString(),
     });

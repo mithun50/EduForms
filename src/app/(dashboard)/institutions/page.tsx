@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Dialog,
   DialogContent,
@@ -100,7 +100,7 @@ export default function InstitutionsPage() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-24 animate-pulse rounded bg-paper2" />
         ))}
       </div>
     );
@@ -108,80 +108,78 @@ export default function InstitutionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Institutions</h2>
-          <p className="text-muted-foreground">Manage schools and colleges</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Institution
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Institution</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Code</Label>
-                <Input
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="e.g. MIT, SJCE"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(val: 'school' | 'college' | 'university') =>
-                    setFormData({ ...formData, type: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="school">School</SelectItem>
-                    <SelectItem value="college">College</SelectItem>
-                    <SelectItem value="university">University</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact Email</Label>
-                <Input
-                  type="email"
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Institution'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <PageHeader
+        title="Institutions"
+        description="Manage schools and colleges"
+        actions={
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger render={<Button />}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Institution
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Institution</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Code</Label>
+                  <Input
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="e.g. MIT, SJCE"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(val: 'school' | 'college' | 'university') =>
+                      setFormData({ ...formData, type: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="school">School</SelectItem>
+                      <SelectItem value="college">College</SelectItem>
+                      <SelectItem value="university">University</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Email</Label>
+                  <Input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Creating...' : 'Create Institution'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -194,20 +192,18 @@ export default function InstitutionsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">No institutions found</p>
-          </CardContent>
-        </Card>
+        <div className="glass-card flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">No institutions found</p>
+        </div>
       ) : (
         <div className="grid gap-4">
           {filtered.map((inst) => (
-            <Card key={inst.id}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div key={inst.id} className="glass-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <CardTitle className="text-lg">{inst.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{inst.code}</p>
+                  <h3 className="font-display text-lg tracking-tight">{inst.name}</h3>
+                  <p className="label-ink mt-1">{inst.code}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={inst.isActive ? 'default' : 'secondary'}>
@@ -215,14 +211,14 @@ export default function InstitutionsPage() {
                   </Badge>
                   <Badge variant="outline">{inst.type}</Badge>
                 </div>
-              </CardHeader>
+              </div>
               {(inst.address || inst.contactEmail) && (
-                <CardContent className="text-sm text-muted-foreground">
+                <div className="mt-2 text-sm text-muted-foreground">
                   {inst.address && <p>{inst.address}</p>}
                   {inst.contactEmail && <p>{inst.contactEmail}</p>}
-                </CardContent>
+                </div>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}

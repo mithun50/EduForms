@@ -13,11 +13,11 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-paper">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-64">
+      <div className="md:pl-14 lg:pl-60">
         <Topbar onMenuClick={() => setSidebarOpen(true)} title={title} />
-        <main className="p-4 md:p-6">{children}</main>
+        <main className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
