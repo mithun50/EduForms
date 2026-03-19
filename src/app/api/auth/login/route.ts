@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account is disabled' }, { status: 403 });
     }
 
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const expiresIn = 60 * 60 * 24 * 7 * 1000; // 7 days
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const admin = {
