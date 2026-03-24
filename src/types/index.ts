@@ -75,7 +75,10 @@ export type FieldType =
   | 'time'
   | 'url'
   | 'multiple_choice_grid'
-  | 'checkbox_grid';
+  | 'checkbox_grid'
+  | 'single_checkbox'
+  | 'date_time'
+  | 'range';
 
 export interface FieldValidation {
   minLength?: number;
@@ -83,6 +86,7 @@ export interface FieldValidation {
   min?: number;
   max?: number;
   pattern?: string;
+  maxSelections?: number;
 }
 
 export interface ScaleConfig {

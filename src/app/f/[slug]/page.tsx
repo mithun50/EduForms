@@ -279,30 +279,37 @@ export default function PublicFormPage() {
           </RadioGroup>
         );
 
-      case 'checkbox':
+      case 'checkbox': {
+        const maxSel = field.validation?.maxSelections;
+        const currentSelections = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2">
+            {maxSel && (
+              <p className="text-xs text-muted-foreground">Select up to {maxSel} option{maxSel !== 1 ? 's' : ''}</p>
+            )}
             {field.options.map((opt) => {
-              const checked = Array.isArray(value) && value.includes(opt);
+              const checked = currentSelections.includes(opt);
+              const atLimit = maxSel ? currentSelections.length >= maxSel && !checked : false;
               return (
                 <div key={opt} className="flex items-center space-x-2">
                   <Checkbox
                     id={`${field.id}-${opt}`}
                     checked={checked}
+                    disabled={atLimit}
                     onCheckedChange={(c) => {
-                      const current = Array.isArray(value) ? value : [];
                       const updated = c
-                        ? [...current, opt]
-                        : current.filter((v) => v !== opt);
+                        ? [...currentSelections, opt]
+                        : currentSelections.filter((v) => v !== opt);
                       updateAnswer(field.id, field.type, updated);
                     }}
                   />
-                  <Label htmlFor={`${field.id}-${opt}`} className="text-sm normal-case tracking-normal font-normal">{opt}</Label>
+                  <Label htmlFor={`${field.id}-${opt}`} className={`text-sm normal-case tracking-normal font-normal ${atLimit ? 'text-muted-foreground' : ''}`}>{opt}</Label>
                 </div>
               );
             })}
           </div>
         );
+      }
 
       case 'rating':
         const maxStars = field.ratingConfig?.maxStars || 5;
@@ -478,6 +485,51 @@ export default function PublicFormPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        );
+      }
+
+      case 'single_checkbox':
+        return (
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={value === 'yes'}
+              onChange={(e) => updateAnswer(field.id, field.type, e.target.checked ? 'yes' : '')}
+              className="h-5 w-5 accent-red rounded"
+            />
+            <span className="text-sm">{field.label}</span>
+          </div>
+        );
+
+      case 'date_time':
+        return (
+          <Input
+            type="datetime-local"
+            value={(value as string) || ''}
+            onChange={(e) => updateAnswer(field.id, field.type, e.target.value)}
+          />
+        );
+
+      case 'range': {
+        const rangeMin = field.validation?.min ?? 0;
+        const rangeMax = field.validation?.max ?? 100;
+        const rangeVal = Number(value) || rangeMin;
+        return (
+          <div className="space-y-2">
+            <input
+              type="range"
+              min={rangeMin}
+              max={rangeMax}
+              value={rangeVal}
+              onChange={(e) => updateAnswer(field.id, field.type, Number(e.target.value))}
+              className="w-full accent-red"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{rangeMin}</span>
+              <span className="font-medium text-ink text-sm">{rangeVal}</span>
+              <span>{rangeMax}</span>
+            </div>
           </div>
         );
       }

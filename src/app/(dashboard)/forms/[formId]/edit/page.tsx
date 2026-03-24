@@ -60,6 +60,9 @@ import {
   Clock,
   Link2,
   Grid3x3,
+  SquareCheck,
+  CalendarClock,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -83,6 +86,9 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: React.ElementType }[]
   { type: 'url', label: 'URL', icon: Link2 },
   { type: 'multiple_choice_grid', label: 'Grid (Radio)', icon: Grid3x3 },
   { type: 'checkbox_grid', label: 'Grid (Checkbox)', icon: Grid3x3 },
+  { type: 'single_checkbox', label: 'Agreement', icon: SquareCheck },
+  { type: 'date_time', label: 'Date & Time', icon: CalendarClock },
+  { type: 'range', label: 'Range Slider', icon: SlidersHorizontal },
 ];
 
 function PropertiesPanel({ selected, updateField, fields }: {
@@ -359,6 +365,55 @@ function PropertiesPanel({ selected, updateField, fields }: {
           </div>
         </div>
       )}
+
+      {selected.type === 'checkbox' && (
+        <div className="space-y-2">
+          <Label>Max Selections</Label>
+          <p className="text-xs text-muted-foreground">Leave empty for unlimited</p>
+          <Input
+            type="number"
+            value={selected.validation?.maxSelections || ''}
+            onChange={(e) =>
+              updateField(selected.id, {
+                validation: { ...selected.validation, maxSelections: e.target.value ? Number(e.target.value) : undefined },
+              })
+            }
+            placeholder="Unlimited"
+            min={1}
+          />
+        </div>
+      )}
+
+      {selected.type === 'range' && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label>Min</Label>
+              <Input
+                type="number"
+                value={selected.validation?.min ?? 0}
+                onChange={(e) =>
+                  updateField(selected.id, {
+                    validation: { ...selected.validation, min: Number(e.target.value) },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Max</Label>
+              <Input
+                type="number"
+                value={selected.validation?.max ?? 100}
+                onChange={(e) =>
+                  updateField(selected.id, {
+                    validation: { ...selected.validation, max: Number(e.target.value) },
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -502,6 +557,30 @@ function PreviewField({ field }: { field: FormField }) {
           </table>
         </div>
       );
+    case 'single_checkbox':
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 rounded border-2 border-line" />
+          <span className="text-sm">{field.label || 'I agree'}</span>
+        </div>
+      );
+    case 'date_time':
+      return <Input type="datetime-local" disabled />;
+    case 'range': {
+      const rMin = field.validation?.min ?? 0;
+      const rMax = field.validation?.max ?? 100;
+      const rMid = Math.round((rMin + rMax) / 2);
+      return (
+        <div className="space-y-1">
+          <input type="range" min={rMin} max={rMax} value={rMid} disabled className="w-full accent-red" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{rMin}</span>
+            <span>{rMid}</span>
+            <span>{rMax}</span>
+          </div>
+        </div>
+      );
+    }
     default:
       return null;
   }
@@ -592,15 +671,16 @@ export default function FormBuilderPage() {
 
   const addField = (type: FieldType) => {
     const isGridType = type === 'multiple_choice_grid' || type === 'checkbox_grid';
+    const hasOptions = type === 'dropdown' || type === 'radio' || type === 'checkbox';
     const newField: FormField = {
       id: uuid(),
       type,
-      label: '',
+      label: type === 'single_checkbox' ? 'I agree' : '',
       description: '',
       required: type === 'section_break' ? false : false,
       order: fields.length,
-      validation: {},
-      options: type === 'dropdown' || type === 'radio' || type === 'checkbox' ? ['Option 1'] : [],
+      validation: type === 'range' ? { min: 0, max: 100 } : {},
+      options: hasOptions ? ['Option 1'] : [],
       scaleConfig: type === 'linear_scale' ? { min: 1, max: 5, minLabel: '', maxLabel: '' } : null,
       ratingConfig: type === 'rating' ? { maxStars: 5 } : null,
       gridConfig: isGridType ? { rows: ['Row 1'], columns: ['Column 1'] } : null,
