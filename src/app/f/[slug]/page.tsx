@@ -77,7 +77,7 @@ export default function PublicFormPage() {
 
   const fetchForm = async () => {
     try {
-      const res = await fetch(`/api/forms/public/${slug}`);
+      const res = await fetch(`/api/forms/public/${slug}`, { cache: 'no-store' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setErrorMessage(err.error || 'Form not available');

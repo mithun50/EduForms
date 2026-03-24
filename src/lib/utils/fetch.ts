@@ -9,7 +9,7 @@ export async function safeFetch<T = Record<string, unknown>>(
   options?: RequestInit
 ): Promise<SafeFetchResult<T>> {
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, { cache: 'no-store', ...options });
 
     if (!res.ok) {
       let errorMsg = `Request failed (${res.status})`;

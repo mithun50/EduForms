@@ -546,7 +546,7 @@ export default function FormBuilderPage() {
 
   const fetchForm = async () => {
     try {
-      const res = await fetch(`/api/forms/${formId}`);
+      const res = await fetch(`/api/forms/${formId}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Form not found');
       const data = await res.json();
       setForm(data.form);
@@ -578,7 +578,7 @@ export default function FormBuilderPage() {
 
   const fetchFilterOptions = async () => {
     try {
-      const res = await fetch('/api/students/sections');
+      const res = await fetch('/api/students/sections', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setAvailableSections(data.sections || []);
