@@ -266,17 +266,30 @@ export default function PublicFormPage() {
 
       case 'radio':
         return (
-          <RadioGroup
-            value={(value as string) || ''}
-            onValueChange={(val) => updateAnswer(field.id, field.type, val)}
-          >
-            {field.options.map((opt) => (
-              <div key={opt} className="flex items-center space-x-2">
-                <RadioGroupItem value={opt} id={`${field.id}-${opt}`} />
-                <Label htmlFor={`${field.id}-${opt}`} className="text-sm normal-case tracking-normal font-normal">{opt}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+          <div className="space-y-2">
+            {field.options.map((opt) => {
+              const isSelected = value === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => updateAnswer(field.id, field.type, opt)}
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                    isSelected
+                      ? 'border-red bg-red/5 ring-1 ring-red/30'
+                      : 'border-line hover:bg-paper2'
+                  }`}
+                >
+                  <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                    isSelected ? 'border-red' : 'border-line'
+                  }`}>
+                    {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-red" />}
+                  </div>
+                  <span className="text-sm">{opt}</span>
+                </button>
+              );
+            })}
+          </div>
         );
 
       case 'checkbox': {
@@ -291,20 +304,35 @@ export default function PublicFormPage() {
               const checked = currentSelections.includes(opt);
               const atLimit = maxSel ? currentSelections.length >= maxSel && !checked : false;
               return (
-                <div key={opt} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${field.id}-${opt}`}
-                    checked={checked}
-                    disabled={atLimit}
-                    onCheckedChange={(c) => {
-                      const updated = c
-                        ? [...currentSelections, opt]
-                        : currentSelections.filter((v) => v !== opt);
-                      updateAnswer(field.id, field.type, updated);
-                    }}
-                  />
-                  <Label htmlFor={`${field.id}-${opt}`} className={`text-sm normal-case tracking-normal font-normal ${atLimit ? 'text-muted-foreground' : ''}`}>{opt}</Label>
-                </div>
+                <button
+                  key={opt}
+                  type="button"
+                  disabled={atLimit}
+                  onClick={() => {
+                    const updated = checked
+                      ? currentSelections.filter((v) => v !== opt)
+                      : [...currentSelections, opt];
+                    updateAnswer(field.id, field.type, updated);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                    checked
+                      ? 'border-red bg-red/5 ring-1 ring-red/30'
+                      : atLimit
+                        ? 'border-line/50 opacity-50 cursor-not-allowed'
+                        : 'border-line hover:bg-paper2'
+                  }`}
+                >
+                  <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors ${
+                    checked ? 'bg-red border-2 border-red' : 'border-2 border-line'
+                  }`}>
+                    {checked && (
+                      <svg className="h-3 w-3 text-paper" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm">{opt}</span>
+                </button>
               );
             })}
           </div>
