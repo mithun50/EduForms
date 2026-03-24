@@ -272,6 +272,17 @@ body {
   animation: scaleIn 0.4s ease-out forwards;
 }
 
+/* ---- Loading bar slide ---- */
+@keyframes loadingBarSlide {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.loading-bar-slide {
+  animation: loadingBarSlide 1.5s ease-in-out infinite;
+}
+
 .animation-delay-100 { animation-delay: 100ms; }
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
