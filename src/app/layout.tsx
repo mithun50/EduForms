@@ -3,6 +3,7 @@ import { Bebas_Neue, Instrument_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { Toaster } from '@/components/ui/sonner';
+import { PointerCaptureFix } from '@/components/pointer-capture-fix';
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${bebasNeue.variable} ${instrumentSans.variable} antialiased`}>
         <AuthProvider>
+          <PointerCaptureFix />
           {children}
           <Toaster />
         </AuthProvider>
