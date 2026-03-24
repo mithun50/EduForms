@@ -1,4 +1,4 @@
-# ScholarForm
+# EduForms
 
 A multi-institution form management platform built for education. Create, distribute, and analyze forms with OTP-verified submissions, role-based access control, and per-institution data isolation.
 
@@ -23,7 +23,7 @@ Built by **Mithun Gowda B** (mithungowda.b7411@gmail.com)
 
 ## Project Overview
 
-ScholarForm is a platform that lets educational institutions create forms, distribute them to students, and analyze responses. Key capabilities include:
+EduForms is a platform that lets educational institutions create forms, distribute them to students, and analyze responses. Key capabilities include:
 
 - Multi-institution support with strict data isolation per institution.
 - OTP-verified form submissions to ensure respondent identity.
@@ -68,8 +68,8 @@ ScholarForm is a platform that lets educational institutions create forms, distr
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/ScholarForm.git
-cd ScholarForm
+git clone https://github.com/your-username/EduForms.git
+cd EduForms
 ```
 
 ### 2. Install dependencies
@@ -450,7 +450,7 @@ Forms can be further restricted to specific subsets of students:
 ## Project Structure
 
 ```
-ScholarForm/
+EduForms/
 ├── scripts/
 │   └── seed-admin.ts              # Seed initial super admin account
 ├── src/

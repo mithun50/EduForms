@@ -16,7 +16,7 @@ const instrumentSans = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'ScholarForm',
+  title: 'EduForms',
   description: 'Form creation platform for schools and colleges',
 };
 

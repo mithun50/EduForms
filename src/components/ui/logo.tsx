@@ -42,7 +42,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
       </svg>
       {showText && (
         <span className={cn('font-display tracking-tight leading-none', s.text)}>
-          Scholar<span className="text-red">Form</span>
+          Edu<span className="text-red">Forms</span>
         </span>
       )}
     </div>
