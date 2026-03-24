@@ -18,12 +18,20 @@ export async function GET(request: NextRequest) {
       .get();
 
     const sections = new Set<string>();
+    const years = new Set<string>();
+    const departments = new Set<string>();
     snapshot.docs.forEach((doc) => {
-      const section = doc.data().section;
-      if (section) sections.add(section);
+      const data = doc.data();
+      if (data.section) sections.add(data.section);
+      if (data.year) years.add(data.year);
+      if (data.department) departments.add(data.department);
     });
 
-    return NextResponse.json({ sections: Array.from(sections).sort() });
+    return NextResponse.json({
+      sections: Array.from(sections).sort(),
+      years: Array.from(years).sort(),
+      departments: Array.from(departments).sort(),
+    });
   } catch (error) {
     console.error('Get sections error:', error);
     return NextResponse.json({ error: 'Failed to fetch sections' }, { status: 500 });

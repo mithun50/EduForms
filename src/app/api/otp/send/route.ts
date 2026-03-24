@@ -66,6 +66,41 @@ export async function POST(request: NextRequest) {
           );
         }
       }
+
+      // Check year restriction
+      const allowedYears = form.settings?.allowedYears || [];
+      if (allowedYears.length > 0) {
+        const studentYear = student.data().year || '';
+        if (!allowedYears.includes(studentYear)) {
+          return NextResponse.json(
+            { error: `This form is restricted to year(s): ${allowedYears.join(', ')}` },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Check department restriction
+      const allowedDepartments = form.settings?.allowedDepartments || [];
+      if (allowedDepartments.length > 0) {
+        const studentDept = student.data().department || '';
+        if (!allowedDepartments.includes(studentDept)) {
+          return NextResponse.json(
+            { error: `This form is restricted to department(s): ${allowedDepartments.join(', ')}` },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Check target audience (uploaded student list)
+      const targetAudience = form.settings?.targetAudience;
+      if (targetAudience?.mode === 'upload' && targetAudience.studentIds?.length > 0) {
+        if (!targetAudience.studentIds.includes(student.id)) {
+          return NextResponse.json(
+            { error: 'You are not in the target audience for this form' },
+            { status: 403 }
+          );
+        }
+      }
     } else {
       // Public form - identifier is email
       email = identifier;

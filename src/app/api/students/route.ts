@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { getSessionAdmin, unauthorized, badRequest } from '@/lib/api-helpers';
+import { getSessionAdmin, unauthorized, forbidden, badRequest } from '@/lib/api-helpers';
 import { studentSchema } from '@/lib/utils/validation';
 
 export async function GET(request: NextRequest) {
@@ -135,5 +135,47 @@ export async function POST(request: NextRequest) {
     console.error('Create student error:', error);
     const message = error instanceof Error ? error.message : 'Failed to create student';
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const admin = await getSessionAdmin(request);
+  if (!admin) return unauthorized();
+
+  try {
+    const body = await request.json();
+    const ids = body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return badRequest('No IDs provided');
+    }
+
+    let deleted = 0;
+    // Process in chunks of 500 (Firestore batch limit)
+    for (let i = 0; i < ids.length; i += 500) {
+      const chunk = ids.slice(i, i + 500);
+      const batch = adminDb.batch();
+
+      for (const id of chunk) {
+        const doc = await adminDb.collection('students').doc(id).get();
+        if (!doc.exists) continue;
+        const student = doc.data()!;
+
+        // Permission checks
+        if (admin.role === 'institution_admin') {
+          if (student.institutionId !== admin.institutionId) continue;
+          if (student.addedBy && student.addedBy !== admin.uid) continue;
+        }
+
+        batch.delete(adminDb.collection('students').doc(id));
+        deleted++;
+      }
+
+      await batch.commit();
+    }
+
+    return NextResponse.json({ success: true, deleted });
+  } catch (error) {
+    console.error('Bulk delete students error:', error);
+    return NextResponse.json({ error: 'Failed to delete students' }, { status: 500 });
   }
 }

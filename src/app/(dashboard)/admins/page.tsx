@@ -161,7 +161,7 @@ export default function AdminsPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <span>{formData.role === 'super_admin' ? 'Super Admin' : 'Institution Admin'}</span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="super_admin">Super Admin</SelectItem>
@@ -177,7 +177,10 @@ export default function AdminsPage() {
                       onValueChange={(val) => setFormData({ ...formData, institutionId: val })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select institution" />
+                        {formData.institutionId
+                          ? <span>{institutions.find(i => i.id === formData.institutionId)?.name || 'Select institution'}</span>
+                          : <SelectValue placeholder="Select institution" />
+                        }
                       </SelectTrigger>
                       <SelectContent>
                         {institutions.map((inst) => (

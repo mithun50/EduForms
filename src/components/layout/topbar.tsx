@@ -10,7 +10,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick, title }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-[60px] items-center gap-4 border-b-[1.5px] border-line bg-paper/95 backdrop-blur px-4 sm:px-6 pl-4 md:pl-[calc(3.5rem+1rem)] lg:pl-[calc(15rem+1.5rem)]">
+    <header className="sticky top-0 z-30 flex h-[60px] items-center gap-4 border-b border-line/60 bg-paper/90 backdrop-blur-md px-4 sm:px-6">
       <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
         <Menu className="h-5 w-5" />
       </Button>

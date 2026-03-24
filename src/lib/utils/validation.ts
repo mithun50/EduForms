@@ -31,6 +31,17 @@ export const formSchema = z.object({
     responseLimit: z.number().nullable().optional(),
     confirmationMessage: z.string().optional().default('Thank you for your response!'),
     allowedSections: z.array(z.string()).optional().default([]),
+    allowedYears: z.array(z.string()).optional().default([]),
+    allowedDepartments: z.array(z.string()).optional().default([]),
+    targetAudience: z.object({
+      mode: z.enum(['all', 'filter', 'upload']),
+      filters: z.object({
+        sections: z.array(z.string()).optional(),
+        years: z.array(z.string()).optional(),
+        departments: z.array(z.string()).optional(),
+      }).optional(),
+      studentIds: z.array(z.string()).optional(),
+    }).optional(),
   }).optional(),
 });
 
@@ -51,4 +62,11 @@ export const otpSendSchema = z.object({
 export const otpVerifySchema = z.object({
   sessionId: z.string().min(1),
   otp: z.string().length(6, 'OTP must be 6 digits'),
+});
+
+export const clearDataSchema = z.object({
+  type: z.enum(['form_responses', 'otp_sessions', 'institution_students', 'full_reset']),
+  formId: z.string().optional(),
+  institutionId: z.string().optional(),
+  confirmPhrase: z.string().optional(),
 });

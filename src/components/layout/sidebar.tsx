@@ -34,11 +34,12 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { admin } = useAuth();
+  const { admin, setAdmin } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut();
+    setAdmin(null);
     router.push('/login');
   };
 
@@ -66,7 +67,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       >
         {/* Header */}
-        <div className="flex h-[60px] items-center justify-between border-b border-paper/10 px-3 lg:px-4">
+        <div className="flex h-[60px] items-center justify-between border-b border-paper/8 px-3 lg:px-4">
           <Link href="/dashboard" className="flex items-center">
             <span className="md:hidden lg:block">
               <Logo size="sm" showText={true} />
@@ -75,13 +76,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               <Logo size="sm" showText={false} />
             </span>
           </Link>
-          <button onClick={onClose} className="md:hidden text-paper/60 hover:text-paper">
+          <button onClick={onClose} className="md:hidden text-paper/60 hover:text-paper transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-2 lg:p-3">
+        <nav className="flex-1 space-y-0.5 p-2 lg:p-3 overflow-y-auto custom-scrollbar">
           {filtered.map((item) => {
             const Icon = item.icon;
             const active = pathname.startsWith(item.href);
@@ -91,15 +92,18 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  'group flex items-center gap-3 rounded px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
+                  'relative group flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] transition-all duration-150',
                   'md:justify-center md:px-0 lg:justify-start lg:px-3',
                   active
-                    ? 'bg-paper/10 text-paper border-l-2 border-red'
-                    : 'text-paper/60 hover:bg-paper/5 hover:text-paper border-l-2 border-transparent'
+                    ? 'bg-paper/12 text-paper'
+                    : 'text-paper/50 hover:bg-paper/6 hover:text-paper/80'
                 )}
                 title={item.label}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-red" />
+                )}
+                <Icon className={cn('h-4 w-4 shrink-0', active && 'text-red')} />
                 <span className="md:hidden lg:inline">{item.label}</span>
               </Link>
             );
@@ -107,15 +111,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-paper/10 p-2 lg:p-3">
+        <div className="border-t border-paper/8 p-2 lg:p-3">
           <div className="mb-2 px-3 md:hidden lg:block">
             <p className="text-sm font-medium truncate text-paper">{admin?.displayName}</p>
-            <p className="text-xs text-paper/50 truncate">{admin?.email}</p>
+            <p className="text-xs text-paper/40 truncate">{admin?.email}</p>
           </div>
           <button
             onClick={handleSignOut}
             className={cn(
-              'flex w-full items-center gap-3 rounded px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-paper/60 transition-colors hover:bg-red/20 hover:text-red',
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-paper/50 transition-all duration-150 hover:bg-red/15 hover:text-red',
               'md:justify-center md:px-0 lg:justify-start lg:px-3'
             )}
             title="Sign Out"

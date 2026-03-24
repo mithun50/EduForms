@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Plus, Upload, Search, Trash2, Building2 } from 'lucide-react';
+import { GraduationCap, Plus, Upload, Search, Trash2, Building2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeFetch } from '@/lib/utils/fetch';
 import Papa from 'papaparse';
@@ -47,6 +47,15 @@ export default function StudentsPage() {
     section: '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editFormData, setEditFormData] = useState({ rollNumber: '', name: '', email: '', department: '', year: '', section: '' });
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -192,6 +201,52 @@ export default function StudentsPage() {
       fetchStudents();
     } catch {
       toast.error('Failed to delete');
+    }
+  };
+
+  const openEditDialog = (s: Student) => {
+    setEditingStudent(s);
+    setEditFormData({ rollNumber: s.rollNumber, name: s.name, email: s.email, department: s.department || '', year: s.year || '', section: s.section || '' });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/students/${editingStudent.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData),
+      });
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error); }
+      toast.success('Student updated');
+      setEditDialogOpen(false);
+      fetchStudents();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const res = await fetch('/api/students', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to delete');
+      }
+      toast.success(`${selectedIds.size} student(s) deleted`);
+      setSelectedIds(new Set());
+      fetchStudents();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete');
     }
   };
 
@@ -369,9 +424,12 @@ export default function StudentsPage() {
       )}
 
       {needsInstitution ? (
-        <div className="glass-card flex flex-col items-center justify-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-muted-foreground">Select an institution to view students</p>
+        <div className="glass-card flex flex-col items-center justify-center py-16">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/40">
+            <Building2 className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <p className="mt-5 text-muted-foreground font-medium">Select an institution to view students</p>
+          <p className="mt-1 text-sm text-muted-foreground/70">Choose from the dropdown above to get started</p>
         </div>
       ) : (
         <>
@@ -385,10 +443,27 @@ export default function StudentsPage() {
             />
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="glass-card p-3 flex items-center justify-between">
+              <span className="text-sm font-medium">{selectedIds.size} student{selectedIds.size !== 1 ? 's' : ''} selected</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+                <Button variant="destructive" size="sm" onClick={() => { setDeleteTargetId(null); setConfirmOpen(true); }}>
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />Delete Selected
+                </Button>
+              </div>
+            </div>
+          )}
+
           {filtered.length === 0 ? (
-            <div className="glass-card flex flex-col items-center justify-center py-12">
-              <GraduationCap className="h-12 w-12 text-muted-foreground/50" />
-              <p className="mt-4 text-muted-foreground">No students found</p>
+            <div className="glass-card flex flex-col items-center justify-center py-16">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/40">
+                <GraduationCap className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+              <p className="mt-5 text-muted-foreground font-medium">No students found</p>
+              <p className="mt-1 text-sm text-muted-foreground/70">
+                {students.length === 0 ? 'Add students individually or upload a CSV' : 'Try adjusting your search'}
+              </p>
             </div>
           ) : (
             <>
@@ -396,36 +471,54 @@ export default function StudentsPage() {
               <div className="space-y-3 md:hidden">
                 {filtered.map((s) => (
                   <div key={s.id} className="glass-card flex items-center justify-between p-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{s.name}</p>
-                      <p className="label-ink mt-1">{s.rollNumber}</p>
-                      <p className="text-sm text-muted-foreground truncate">{s.email}</p>
-                      {s.department && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {s.department}{s.year ? ` - ${s.year}` : ''}{s.section ? ` ${s.section}` : ''}
-                        </p>
-                      )}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <input type="checkbox" checked={selectedIds.has(s.id)} onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) next.add(s.id); else next.delete(s.id);
+                        setSelectedIds(next);
+                      }} className="h-4 w-4 accent-red shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{s.name}</p>
+                        <p className="label-ink mt-1">{s.rollNumber}</p>
+                        <p className="text-sm text-muted-foreground truncate">{s.email}</p>
+                        {s.department && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {s.department}{s.year ? ` - ${s.year}` : ''}{s.section ? ` ${s.section}` : ''}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleteTargetId(s.id);
-                        setConfirmOpen(true);
-                      }}
-                      className="text-muted-foreground hover:text-red shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(s)} className="text-muted-foreground hover:text-ink">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleteTargetId(s.id);
+                          setConfirmOpen(true);
+                        }}
+                        className="text-muted-foreground hover:text-red"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
 
               {/* Desktop table layout */}
-              <div className="hidden md:block glass-card overflow-x-auto">
+              <div className="hidden md:block glass-card table-scroll">
                 <table className="table-ink">
                   <thead>
                     <tr>
+                      <th className="w-10">
+                        <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={(e) => {
+                          if (e.target.checked) setSelectedIds(new Set(filtered.map(s => s.id)));
+                          else setSelectedIds(new Set());
+                        }} className="h-4 w-4 accent-red" />
+                      </th>
                       <th>Roll No.</th>
                       <th>Name</th>
                       <th>Email</th>
@@ -438,13 +531,23 @@ export default function StudentsPage() {
                   <tbody>
                     {filtered.map((s) => (
                       <tr key={s.id}>
+                        <td>
+                          <input type="checkbox" checked={selectedIds.has(s.id)} onChange={(e) => {
+                            const next = new Set(selectedIds);
+                            if (e.target.checked) next.add(s.id); else next.delete(s.id);
+                            setSelectedIds(next);
+                          }} className="h-4 w-4 accent-red" />
+                        </td>
                         <td className="font-medium">{s.rollNumber}</td>
                         <td>{s.name}</td>
                         <td>{s.email}</td>
                         <td>{s.department}</td>
                         <td>{s.year}</td>
                         <td>{s.section}</td>
-                        <td>
+                        <td className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(s)} className="text-muted-foreground hover:text-ink">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -470,15 +573,82 @@ export default function StudentsPage() {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Delete Student"
-        description="Are you sure you want to delete this student? This action cannot be undone."
+        title={deleteTargetId ? 'Delete Student' : `Delete ${selectedIds.size} Student${selectedIds.size !== 1 ? 's' : ''}`}
+        description={deleteTargetId
+          ? 'Are you sure you want to delete this student? This action cannot be undone.'
+          : `Are you sure you want to delete ${selectedIds.size} selected student${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={() => {
-          if (deleteTargetId) handleDelete(deleteTargetId);
+          if (deleteTargetId) {
+            handleDelete(deleteTargetId);
+          } else if (selectedIds.size > 0) {
+            handleBulkDelete();
+          }
           setDeleteTargetId(null);
         }}
       />
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Student</DialogTitle></DialogHeader>
+          <form onSubmit={handleEditStudent} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Roll Number</Label>
+                <Input
+                  value={editFormData.rollNumber}
+                  onChange={(e) => setEditFormData({ ...editFormData, rollNumber: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Input
+                  value={editFormData.department}
+                  onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Year</Label>
+                <Input
+                  value={editFormData.year}
+                  onChange={(e) => setEditFormData({ ...editFormData, year: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Section</Label>
+                <Input
+                  value={editFormData.section}
+                  onChange={(e) => setEditFormData({ ...editFormData, section: e.target.value })}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={editSubmitting}>
+              {editSubmitting ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

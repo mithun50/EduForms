@@ -23,12 +23,25 @@ export interface Admin {
 export type FormStatus = 'draft' | 'published' | 'closed';
 export type FormAccessType = 'restricted' | 'public';
 
+export interface TargetAudience {
+  mode: 'all' | 'filter' | 'upload';
+  filters?: {
+    sections?: string[];
+    years?: string[];
+    departments?: string[];
+  };
+  studentIds?: string[];
+}
+
 export interface FormSettings {
   startDate: string | null;
   endDate: string | null;
   responseLimit: number | null;
   confirmationMessage: string;
   allowedSections: string[];
+  allowedYears: string[];
+  allowedDepartments: string[];
+  targetAudience?: TargetAudience;
 }
 
 export interface Form {
@@ -57,7 +70,12 @@ export type FieldType =
   | 'date'
   | 'file'
   | 'rating'
-  | 'linear_scale';
+  | 'linear_scale'
+  | 'section_break'
+  | 'time'
+  | 'url'
+  | 'multiple_choice_grid'
+  | 'checkbox_grid';
 
 export interface FieldValidation {
   minLength?: number;
@@ -78,6 +96,11 @@ export interface RatingConfig {
   maxStars: number;
 }
 
+export interface GridConfig {
+  rows: string[];
+  columns: string[];
+}
+
 export interface FormField {
   id: string;
   type: FieldType;
@@ -89,6 +112,7 @@ export interface FormField {
   options: string[];
   scaleConfig: ScaleConfig | null;
   ratingConfig: RatingConfig | null;
+  gridConfig: GridConfig | null;
 }
 
 export interface Student {
@@ -106,7 +130,7 @@ export interface Student {
 
 export interface FieldAnswer {
   fieldType: FieldType;
-  value: string | string[] | number;
+  value: string | string[] | number | Record<string, string> | Record<string, string[]>;
 }
 
 export interface FormResponse {

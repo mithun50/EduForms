@@ -34,10 +34,10 @@
   --color-sidebar-accent-foreground: #F2EFE9;
   --color-sidebar-border: rgba(242,239,233,0.12);
   --color-sidebar-ring: #E8341A;
-  --radius-sm: 4px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
   --color-ink: #0D0D0D;
   --color-paper: #F2EFE9;
@@ -47,7 +47,7 @@
 }
 
 :root {
-  --radius: 4px;
+  --radius: 8px;
   --font-display: var(--font-bebas-neue);
   --font-body: var(--font-instrument-sans);
 }
@@ -63,6 +63,43 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ---- iOS input zoom prevention ---- */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* ---- Touch targets ---- */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exceptions for inline icon buttons that already have padding */
+  [data-slot="dropdown-menu-item"],
+  button[class*="size-icon"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
 /* ---- Utility Classes ---- */
 
 .font-display {
@@ -71,8 +108,23 @@ body {
 
 .glass-card {
   background: #F2EFE9;
-  border: 1.5px solid rgba(13,13,13,0.12);
-  border-radius: 4px;
+  border: 1px solid rgba(13,13,13,0.10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(13,13,13,0.04), 0 1px 2px rgba(13,13,13,0.03);
+}
+
+.glass-card-hover {
+  background: #F2EFE9;
+  border: 1px solid rgba(13,13,13,0.10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(13,13,13,0.04), 0 1px 2px rgba(13,13,13,0.03);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card-hover:hover {
+  box-shadow: 0 4px 12px rgba(13,13,13,0.08), 0 2px 4px rgba(13,13,13,0.04);
+  border-color: rgba(13,13,13,0.18);
+  transform: translateY(-1px);
 }
 
 .label-ink {
@@ -87,6 +139,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 600;
+}
+
+/* ---- Dot grid background pattern ---- */
+.dot-grid-bg {
+  background-image: radial-gradient(circle, rgba(13,13,13,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 /* ---- Table Ink Styles ---- */
@@ -120,7 +178,51 @@ body {
 }
 
 .table-ink tbody tr:nth-child(even) {
-  background-color: #E8E4DD;
+  background-color: rgba(232,228,221,0.5);
+}
+
+.table-ink tbody tr:hover {
+  background-color: rgba(232,228,221,0.8);
+}
+
+/* ---- Smooth table scroll ---- */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(13,13,13,0.15) transparent;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(13,13,13,0.15);
+  border-radius: 3px;
+}
+
+/* ---- Custom scrollbar for sidebar and panels ---- */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242,239,233,0.2) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(242,239,233,0.2);
+  border-radius: 2px;
 }
 
 /* ---- Animations ---- */
@@ -147,6 +249,17 @@ body {
   }
 }
 
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -155,7 +268,48 @@ body {
   animation: slideUp 0.4s ease-out forwards;
 }
 
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
+}
+
 .animation-delay-100 { animation-delay: 100ms; }
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-400 { animation-delay: 400ms; }
+
+/* ---- Progress bar ---- */
+.progress-bar {
+  height: 3px;
+  background: rgba(13,13,13,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #E8341A, #ff5c3a);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ---- Stat card ---- */
+.stat-card {
+  background: #F2EFE9;
+  border: 1px solid rgba(13,13,13,0.10);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(13,13,13,0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(13,13,13,0.08);
+  transform: translateY(-2px);
+}
+
+/* ---- Divider ---- */
+.divider {
+  height: 1px;
+  background: rgba(13,13,13,0.08);
+  border: none;
+}

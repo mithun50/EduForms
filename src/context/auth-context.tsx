@@ -32,29 +32,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setAdmin(data.admin);
+        return true;
       } else {
         setAdmin(null);
+        return false;
       }
     } catch {
       setAdmin(null);
+      return false;
     }
   }, []);
 
+  // On mount: check session cookie first (source of truth)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        // Only fetch admin from session if we don't already have admin data
-        // (e.g. on page refresh when cookie already exists)
-        if (!admin) {
-          await fetchAdmin();
-        }
-      } else {
-        setAdmin(null);
+    let mounted = true;
+
+    const init = async () => {
+      // Always check the httpOnly session cookie first
+      await fetchAdmin();
+      if (mounted) {
+        setLoading(false);
       }
-      setLoading(false);
+    };
+
+    init();
+
+    // Listen for Firebase client auth changes (handles real-time sign-out)
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      // If Firebase says signed out but we have admin, re-check session
+      // (user may have signed out in another tab)
+      if (!firebaseUser && admin) {
+        fetchAdmin();
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

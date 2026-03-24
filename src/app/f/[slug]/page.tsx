@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import type { FormField } from '@/types';
 import { Footer } from '@/components/ui/footer';
-import { CheckCircle, Star } from 'lucide-react';
+import { CheckCircle, Star, AlertCircle, Home } from 'lucide-react';
 
 type Step = 'loading' | 'error' | 'identify' | 'otp' | 'fill' | 'success';
 
@@ -56,6 +57,19 @@ export default function PublicFormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+
+  // Progress calculation
+  const progress = useMemo(() => {
+    const requiredFields = fields.filter((f) => f.required);
+    if (requiredFields.length === 0) return 100;
+    const filledCount = requiredFields.filter((f) => {
+      const answer = answers[f.id];
+      if (!answer || !answer.value) return false;
+      if (Array.isArray(answer.value)) return answer.value.length > 0;
+      return String(answer.value).trim() !== '';
+    }).length;
+    return Math.round((filledCount / requiredFields.length) * 100);
+  }, [fields, answers]);
 
   useEffect(() => {
     fetchForm();
@@ -140,11 +154,29 @@ export default function PublicFormPage() {
     e.preventDefault();
 
     for (const field of fields) {
+      if (field.type === 'section_break') continue;
       if (field.required) {
         const answer = answers[field.id];
         if (!answer || !answer.value || (Array.isArray(answer.value) && answer.value.length === 0)) {
           toast.error(`"${field.label}" is required`);
           return;
+        }
+        // Grid fields: check all rows have a selection
+        if (field.type === 'multiple_choice_grid' && field.gridConfig) {
+          const gridVal = (typeof answer.value === 'object' && !Array.isArray(answer.value)) ? answer.value as Record<string, string> : {};
+          const missingRow = field.gridConfig.rows.find((row) => !gridVal[row]);
+          if (missingRow) {
+            toast.error(`"${field.label}" requires a selection for "${missingRow}"`);
+            return;
+          }
+        }
+        if (field.type === 'checkbox_grid' && field.gridConfig) {
+          const gridVal = (typeof answer.value === 'object' && !Array.isArray(answer.value)) ? answer.value as Record<string, string[]> : {};
+          const missingRow = field.gridConfig.rows.find((row) => !gridVal[row] || gridVal[row].length === 0);
+          if (missingRow) {
+            toast.error(`"${field.label}" requires a selection for "${missingRow}"`);
+            return;
+          }
         }
       }
     }
@@ -338,6 +370,117 @@ export default function PublicFormPage() {
           />
         );
 
+      case 'section_break':
+        return (
+          <div className="border-t border-line/40 pt-2">
+            {field.description && <p className="text-sm text-muted-foreground">{field.description}</p>}
+          </div>
+        );
+
+      case 'time':
+        return (
+          <Input
+            type="time"
+            value={(value as string) || ''}
+            onChange={(e) => updateAnswer(field.id, field.type, e.target.value)}
+          />
+        );
+
+      case 'url':
+        return (
+          <Input
+            type="url"
+            value={(value as string) || ''}
+            onChange={(e) => updateAnswer(field.id, field.type, e.target.value)}
+            placeholder="https://..."
+          />
+        );
+
+      case 'multiple_choice_grid': {
+        const gridValue = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value as Record<string, string> : {};
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left p-2"></th>
+                  {field.gridConfig?.columns.map((col) => (
+                    <th key={col} className="p-2 text-center font-medium text-muted-foreground">{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {field.gridConfig?.rows.map((row) => (
+                  <tr key={row} className="border-t border-line/30">
+                    <td className="p-2 font-medium">{row}</td>
+                    {field.gridConfig?.columns.map((col) => (
+                      <td key={col} className="p-2 text-center">
+                        <input
+                          type="radio"
+                          name={`${field.id}-${row}`}
+                          checked={gridValue[row] === col}
+                          onChange={() => {
+                            const newVal = { ...gridValue, [row]: col };
+                            updateAnswer(field.id, field.type, newVal as any);
+                          }}
+                          className="h-4 w-4 accent-red"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      case 'checkbox_grid': {
+        const cbGridValue = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value as Record<string, string[]> : {};
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left p-2"></th>
+                  {field.gridConfig?.columns.map((col) => (
+                    <th key={col} className="p-2 text-center font-medium text-muted-foreground">{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {field.gridConfig?.rows.map((row) => (
+                  <tr key={row} className="border-t border-line/30">
+                    <td className="p-2 font-medium">{row}</td>
+                    {field.gridConfig?.columns.map((col) => {
+                      const rowSelections = cbGridValue[row] || [];
+                      const isChecked = rowSelections.includes(col);
+                      return (
+                        <td key={col} className="p-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const currentRow = cbGridValue[row] || [];
+                              const updatedRow = isChecked
+                                ? currentRow.filter((c) => c !== col)
+                                : [...currentRow, col];
+                              const newVal = { ...cbGridValue, [row]: updatedRow };
+                              updateAnswer(field.id, field.type, newVal as any);
+                            }}
+                            className="h-4 w-4 accent-red"
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
@@ -355,10 +498,22 @@ export default function PublicFormPage() {
   // Error state
   if (step === 'error') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper px-4">
-        <div className="glass-card w-full max-w-md text-center p-8">
-          <p className="font-display text-2xl text-red">{errorMessage}</p>
+      <div className="flex min-h-screen flex-col bg-paper">
+        <div className="flex flex-1 items-center justify-center px-4">
+          <div className="glass-card w-full max-w-md text-center p-10 space-y-5 shadow-lg">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red/10 mx-auto">
+              <AlertCircle className="h-8 w-8 text-red" />
+            </div>
+            <p className="font-display text-2xl">{errorMessage}</p>
+            <Link href="/">
+              <Button variant="outline" className="rounded-full px-6">
+                <Home className="mr-2 h-4 w-4" />
+                Go to Homepage
+              </Button>
+            </Link>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -368,14 +523,17 @@ export default function PublicFormPage() {
     return (
       <div className="flex min-h-screen flex-col bg-paper">
         <div className="flex flex-1 items-center justify-center px-4">
-          <div className="glass-card w-full max-w-md text-center p-8 space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
+          <div className="glass-card w-full max-w-md text-center p-10 space-y-5 shadow-lg animate-scale-in">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 mx-auto">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
             <h2 className="font-display text-3xl tracking-tight">
               {isEditing ? 'Response Updated!' : 'Submitted!'}
             </h2>
             <p className="text-muted-foreground">{confirmationMessage}</p>
             <Button
               variant="outline"
+              className="rounded-full px-6"
               onClick={() => window.location.reload()}
             >
               {isEditing ? 'Edit response again' : 'Submit another response'}
@@ -389,113 +547,120 @@ export default function PublicFormPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
-      <div className="flex-1 py-8 px-4">
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Form Header */}
-        <div className="glass-card p-6">
-          {institutionName && (
-            <p className="label-ink mb-2">{institutionName}</p>
-          )}
-          <h1 className="font-display text-3xl tracking-tight">{form?.title}</h1>
-          {form?.description && <p className="text-muted-foreground mt-2">{form.description}</p>}
+      {/* Progress bar */}
+      {step === 'fill' && (
+        <div className="progress-bar">
+          <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
         </div>
+      )}
 
-        {/* OTP Identify Step */}
-        {step === 'identify' && (
-          <div className="glass-card p-6">
-            <h2 className="font-display text-xl tracking-tight">Verify Your Identity</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {form?.accessType === 'restricted'
-                ? 'Enter your roll number to receive an OTP'
-                : 'Enter your email to receive an OTP'}
-            </p>
-            <form onSubmit={handleSendOtp} className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label>
-                  {form?.accessType === 'restricted' ? 'Roll Number' : 'Email'}
-                </Label>
-                <Input
-                  type={form?.accessType === 'public' ? 'email' : 'text'}
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={
-                    form?.accessType === 'restricted'
-                      ? 'Enter your roll number'
-                      : 'Enter your email'
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={sendingOtp}>
-                {sendingOtp ? 'Sending OTP...' : 'Send OTP'}
-              </Button>
-            </form>
-          </div>
-        )}
-
-        {/* OTP Verify Step */}
-        {step === 'otp' && (
-          <div className="glass-card p-6">
-            <h2 className="font-display text-xl tracking-tight">Enter OTP</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              We sent a 6-digit code to {maskedEmail}
-            </p>
-            <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label>OTP Code</Label>
-                <Input
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Enter 6-digit OTP"
-                  maxLength={6}
-                  className="text-center text-2xl tracking-widest"
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={verifyingOtp}>
-                {verifyingOtp ? 'Verifying...' : 'Verify'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setStep('identify')}
-              >
-                Back
-              </Button>
-            </form>
-          </div>
-        )}
-
-        {/* Form Fill Step */}
-        {step === 'fill' && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isEditing && (
-              <div className="glass-card border-red/30 bg-red/5 p-4 text-sm text-muted-foreground">
-                You have already submitted this form. You can edit your response below and re-submit while the form is open.
-              </div>
+      <div className="flex-1 py-8 px-4">
+        <div className="mx-auto max-w-2xl space-y-5">
+          {/* Form Header */}
+          <div className="glass-card p-6 sm:p-8 shadow-sm">
+            {institutionName && (
+              <p className="label-ink mb-3">{institutionName}</p>
             )}
-            {fields.map((field) => (
-              <div key={field.id} className="glass-card p-5 space-y-3">
-                <div>
-                  <label className="text-sm font-medium">
-                    {field.label}
-                    {field.required && <span className="text-red ml-1">*</span>}
-                  </label>
-                  {field.description && (
-                    <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
-                  )}
-                </div>
-                {renderField(field)}
-              </div>
-            ))}
+            <h1 className="font-display text-3xl sm:text-4xl tracking-tight">{form?.title}</h1>
+            {form?.description && <p className="text-muted-foreground mt-2 leading-relaxed">{form.description}</p>}
+          </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-              {submitting ? 'Submitting...' : isEditing ? 'Update Response' : 'Submit'}
-            </Button>
-          </form>
-        )}
-      </div>
+          {/* OTP Identify Step */}
+          {step === 'identify' && (
+            <div className="glass-card p-6 sm:p-8 shadow-sm">
+              <h2 className="font-display text-xl tracking-tight">Verify Your Identity</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {form?.accessType === 'restricted'
+                  ? 'Enter your roll number to receive an OTP'
+                  : 'Enter your email to receive an OTP'}
+              </p>
+              <form onSubmit={handleSendOtp} className="mt-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>
+                    {form?.accessType === 'restricted' ? 'Roll Number' : 'Email'}
+                  </Label>
+                  <Input
+                    type={form?.accessType === 'public' ? 'email' : 'text'}
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder={
+                      form?.accessType === 'restricted'
+                        ? 'Enter your roll number'
+                        : 'Enter your email'
+                    }
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11" disabled={sendingOtp}>
+                  {sendingOtp ? 'Sending OTP...' : 'Send OTP'}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* OTP Verify Step */}
+          {step === 'otp' && (
+            <div className="glass-card p-6 sm:p-8 shadow-sm">
+              <h2 className="font-display text-xl tracking-tight">Enter OTP</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                We sent a 6-digit code to {maskedEmail}
+              </p>
+              <form onSubmit={handleVerifyOtp} className="mt-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>OTP Code</Label>
+                  <Input
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    className="text-center text-2xl tracking-widest h-14"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11" disabled={verifyingOtp}>
+                  {verifyingOtp ? 'Verifying...' : 'Verify'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setStep('identify')}
+                >
+                  Back
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Form Fill Step */}
+          {step === 'fill' && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isEditing && (
+                <div className="glass-card border-red/30 bg-red/5 p-4 text-sm text-muted-foreground rounded-lg">
+                  You have already submitted this form. You can edit your response below and re-submit while the form is open.
+                </div>
+              )}
+              {fields.map((field) => (
+                <div key={field.id} className="glass-card p-5 sm:p-6 space-y-3 shadow-sm">
+                  <div>
+                    <label className="text-sm font-medium">
+                      {field.label}
+                      {field.required && field.type !== 'section_break' && <span className="text-red ml-1">*</span>}
+                    </label>
+                    {field.type !== 'section_break' && field.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
+                    )}
+                  </div>
+                  {renderField(field)}
+                </div>
+              ))}
+
+              <Button type="submit" className="w-full h-12" size="lg" disabled={submitting}>
+                {submitting ? 'Submitting...' : isEditing ? 'Update Response' : 'Submit'}
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
       <Footer />
     </div>

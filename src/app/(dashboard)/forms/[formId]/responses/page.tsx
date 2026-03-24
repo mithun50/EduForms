@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Search, BarChart3, Table as TableIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Download, Search, BarChart3, Table as TableIcon, ChevronDown, ChevronUp, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeFetch } from '@/lib/utils/fetch';
-import type { Form, FormField, FormResponse } from '@/types';
+import type { Form, FormField, FormResponse, Student } from '@/types';
 import {
   BarChart,
   Bar,
@@ -42,6 +42,11 @@ export default function ResponsesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [nonResponders, setNonResponders] = useState<Student[]>([]);
+  const [nonRespondersLoading, setNonRespondersLoading] = useState(false);
+  const [totalEligible, setTotalEligible] = useState(0);
+  const [nonRespondersSearch, setNonRespondersSearch] = useState('');
+  const [nonRespondersFetched, setNonRespondersFetched] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -71,13 +76,33 @@ export default function ResponsesPage() {
     }
   };
 
+  const fetchNonResponders = async () => {
+    if (nonRespondersFetched) return;
+    setNonRespondersLoading(true);
+    try {
+      const result = await safeFetch<{ nonResponders: Student[]; totalEligible: number; totalResponded: number }>(`/api/forms/${formId}/non-responders`);
+      if (result.ok) {
+        setNonResponders(result.data?.nonResponders || []);
+        setTotalEligible(result.data?.totalEligible || 0);
+        setNonRespondersFetched(true);
+      } else {
+        toast.error(result.error || 'Failed to load non-responders');
+      }
+    } catch {
+      toast.error('Failed to load non-responders');
+    } finally {
+      setNonRespondersLoading(false);
+    }
+  };
+
   const escCsv = (val: string) => `"${String(val).replace(/"/g, '""')}"`;
 
   const exportCsv = () => {
     if (responses.length === 0) return;
 
     const isRestricted = form?.accessType === 'restricted';
-    const fieldLabels = fields.map((f) => f.label || f.id);
+    const exportFields = fields.filter((f) => f.type !== 'section_break');
+    const fieldLabels = exportFields.map((f) => f.label || f.id);
 
     // Build header row
     const headers = [
@@ -104,10 +129,15 @@ export default function ResponsesPage() {
             ]
           : []),
         r.respondentEmail,
-        ...fields.map((f) => {
+        ...exportFields.map((f) => {
           const answer = r.answers?.[f.id];
           if (!answer) return '';
-          return Array.isArray(answer.value) ? answer.value.join('; ') : String(answer.value);
+          const val = answer.value;
+          if (Array.isArray(val)) return val.join('; ');
+          if (val && typeof val === 'object' && !Array.isArray(val)) {
+            return Object.entries(val as Record<string, unknown>).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('; ');
+          }
+          return String(val);
         }),
         new Date(r.submittedAt).toLocaleString(),
       ];
@@ -130,7 +160,23 @@ export default function ResponsesPage() {
     URL.revokeObjectURL(url);
   };
 
+  const exportNonRespondersCsv = () => {
+    if (nonResponders.length === 0) return;
+    const headers = ['Roll Number', 'Name', 'Email', 'Department', 'Year', 'Section'];
+    const rows = nonResponders.map((s) => [s.rollNumber, s.name, s.email, s.department, s.year, s.section].map(v => escCsv(v || '')));
+    const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${form?.title || 'form'}-non-responders.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getFieldAnalytics = (field: FormField) => {
+    if (['section_break', 'multiple_choice_grid', 'checkbox_grid'].includes(field.type)) return null;
+
     const values = responses
       .map((r) => r.answers?.[field.id]?.value)
       .filter((v) => v !== undefined && v !== null && v !== '');
@@ -170,7 +216,7 @@ export default function ResponsesPage() {
       };
     }
 
-    if (['text', 'textarea', 'email', 'phone'].includes(field.type)) {
+    if (['text', 'textarea', 'email', 'phone', 'time', 'url'].includes(field.type)) {
       return {
         type: 'text' as const,
         data: null,
@@ -264,6 +310,12 @@ export default function ResponsesPage() {
             <BarChart3 className="mr-1 h-4 w-4" />
             Analytics
           </TabsTrigger>
+          {form?.accessType === 'restricted' && (
+            <TabsTrigger value="non-responders" onClick={fetchNonResponders}>
+              <UserX className="mr-1.5 h-4 w-4" />
+              Non-Responders
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="table" className="space-y-4 mt-4">
@@ -607,6 +659,103 @@ export default function ResponsesPage() {
             );
           })}
         </TabsContent>
+
+        {form?.accessType === 'restricted' && (
+          <TabsContent value="non-responders">
+            <div className="space-y-4 mt-4">
+              {/* Summary */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="glass-card p-4 text-center">
+                  <p className="label-ink">Eligible</p>
+                  <p className="font-display text-3xl mt-1">{totalEligible}</p>
+                </div>
+                <div className="glass-card p-4 text-center">
+                  <p className="label-ink">Responded</p>
+                  <p className="font-display text-3xl mt-1 text-green-600">{totalEligible - nonResponders.length}</p>
+                </div>
+                <div className="glass-card p-4 text-center">
+                  <p className="label-ink">Pending</p>
+                  <p className="font-display text-3xl mt-1 text-red">{nonResponders.length}</p>
+                </div>
+              </div>
+
+              {/* Search + Export */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search non-responders..."
+                    value={nonRespondersSearch}
+                    onChange={(e) => setNonRespondersSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline" onClick={exportNonRespondersCsv} disabled={nonResponders.length === 0}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+
+              {nonRespondersLoading ? (
+                <div className="glass-card flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
+                </div>
+              ) : nonResponders.length === 0 ? (
+                <div className="glass-card flex flex-col items-center justify-center py-12">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
+                    <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="mt-4 font-medium text-muted-foreground">All eligible students have responded!</p>
+                </div>
+              ) : (
+                <>
+                  {/* Mobile cards */}
+                  <div className="space-y-3 md:hidden">
+                    {nonResponders
+                      .filter(s => !nonRespondersSearch || s.name?.toLowerCase().includes(nonRespondersSearch.toLowerCase()) || s.rollNumber?.toLowerCase().includes(nonRespondersSearch.toLowerCase()))
+                      .map((s) => (
+                      <div key={s.id} className="glass-card p-4">
+                        <p className="font-medium">{s.name}</p>
+                        <p className="label-ink mt-1">{s.rollNumber}</p>
+                        <p className="text-sm text-muted-foreground">{s.email}</p>
+                        {s.department && <p className="text-xs text-muted-foreground mt-1">{s.department}{s.year ? ` - ${s.year}` : ''}{s.section ? ` ${s.section}` : ''}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop table */}
+                  <div className="hidden md:block glass-card table-scroll">
+                    <table className="table-ink">
+                      <thead>
+                        <tr>
+                          <th>Roll No.</th>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Department</th>
+                          <th>Year</th>
+                          <th>Section</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {nonResponders
+                          .filter(s => !nonRespondersSearch || s.name?.toLowerCase().includes(nonRespondersSearch.toLowerCase()) || s.rollNumber?.toLowerCase().includes(nonRespondersSearch.toLowerCase()))
+                          .map((s) => (
+                          <tr key={s.id}>
+                            <td className="font-medium">{s.rollNumber}</td>
+                            <td>{s.name}</td>
+                            <td>{s.email}</td>
+                            <td>{s.department}</td>
+                            <td>{s.year}</td>
+                            <td>{s.section}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -148,7 +148,7 @@ export default function InstitutionsPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <span className="capitalize">{formData.type}</span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="school">School</SelectItem>
