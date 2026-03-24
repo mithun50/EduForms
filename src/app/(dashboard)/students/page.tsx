@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { GraduationCap, Plus, Upload, Search, Trash2, Building2, Pencil } from 'lucide-react';
+import { LoadingInline } from '@/components/ui/loading';
 import { toast } from 'sonner';
 import { safeFetch } from '@/lib/utils/fetch';
 import Papa from 'papaparse';
@@ -262,13 +263,7 @@ export default function StudentsPage() {
   const selectedInstitution = institutions.find((i) => i.id === selectedInstitutionId);
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded bg-paper2" />
-        ))}
-      </div>
-    );
+    return <LoadingInline />;
   }
 
   return (

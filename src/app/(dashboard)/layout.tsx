@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
+import { LoadingScreen } from '@/components/ui/loading';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -16,11 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [admin, loading, router]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen message="Loading dashboard..." />;
   }
 
   if (!admin) return null;

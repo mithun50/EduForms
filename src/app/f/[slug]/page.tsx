@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import type { FormField } from '@/types';
 import { Footer } from '@/components/ui/footer';
+import { LoadingScreen } from '@/components/ui/loading';
 import { CheckCircle, Star, AlertCircle, Home } from 'lucide-react';
 
 type Step = 'loading' | 'error' | 'identify' | 'otp' | 'fill' | 'success';
@@ -488,11 +489,7 @@ export default function PublicFormPage() {
 
   // Loading state
   if (step === 'loading') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-paper">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen message="Loading form..." />;
   }
 
   // Error state

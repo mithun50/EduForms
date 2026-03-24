@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Download, Search, BarChart3, Table as TableIcon, ChevronDown, ChevronUp, UserX } from 'lucide-react';
+import { LoadingInline } from '@/components/ui/loading';
 import { toast } from 'sonner';
 import { safeFetch } from '@/lib/utils/fetch';
 import type { Form, FormField, FormResponse, Student } from '@/types';
@@ -273,11 +274,7 @@ export default function ResponsesPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
-      </div>
-    );
+    return <LoadingInline className="min-h-[60vh]" />;
   }
 
   const isRestricted = form?.accessType === 'restricted';
@@ -697,9 +694,7 @@ export default function ResponsesPage() {
               </div>
 
               {nonRespondersLoading ? (
-                <div className="glass-card flex items-center justify-center py-12">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
-                </div>
+                <LoadingInline />
               ) : nonResponders.length === 0 ? (
                 <div className="glass-card flex flex-col items-center justify-center py-12">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">

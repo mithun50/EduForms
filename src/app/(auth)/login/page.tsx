@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/ui/logo';
+import { LoadingScreen } from '@/components/ui/loading';
 import { toast } from 'sonner';
 
 function LoginForm() {
@@ -44,11 +45,9 @@ function LoginForm() {
     }
   };
 
-  // Show spinner while checking session
+  // Show loading while checking session
   if (authLoading || admin) {
-    return (
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />
-    );
+    return <LoadingScreen message="Checking session..." fullScreen={false} />;
   }
 
   return (
@@ -96,7 +95,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper dot-grid-bg px-4">
-      <Suspense fallback={<div className="h-8 w-8 animate-spin rounded-full border-4 border-red border-t-transparent" />}>
+      <Suspense fallback={<LoadingScreen message="Loading..." fullScreen={false} />}>
         <LoginForm />
       </Suspense>
     </div>
